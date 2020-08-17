@@ -1,0 +1,19 @@
+# Minecraftサーバーの latest.log のパス
+logPath: ''
+
+# token: Discord Developer Portalで作成したBotのToken
+# chatChannel: チャットに使用するチャンネルのID
+# commandPrefix: Discordコマンド認識のための接頭辞
+discord:
+    token: ''
+    chatChannel: ''
+    commandPrefix: '!'
+
+# Minecraftサーバーの server.properties で
+# enable-rcon を true に
+# rcon.password に任意のパスワードを
+# rcon.port に任意のポート番号を(デフォルトは25575)
+rcon:
+    host: ''
+    port: 25575
+    password: ''
