@@ -70,6 +70,14 @@ const main = async () => {
         const parserResult = LogParser(message);
         if (!parserResult) return;
 
+        if (parserResult.type === 'login' || parserResult.type === 'logout') {
+            const regex = listRegex.exec(await rcon.send('list'));
+            if (!regex) return;
+
+            const users = regex[3].split(', ').filter(x => x !== '').map(x => `\`${x}\``);
+            parserResult.message += `\nログイン中: ${users.join(', ')}`;
+        }
+
         await channel.send(parserResult.message);
 
         if (parserResult.type === 'chat') return;
