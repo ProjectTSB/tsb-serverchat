@@ -12,27 +12,31 @@ import { Command } from './discord/Command';
 
 const conf: Config = yaml.load(readFileSync('config.yaml', 'utf-8'));
 
+const listRegex = /^There\sare\s([^\s]*)\sof\sa\smax\sof\s([^\s]*)\splayers\sonline:\s(.*)$/;
+
 const setBotStatus = async (client: Client, rcon: Rcon) => {
     if (!client.user) return;
+    if (!rcon.socket) return;
 
-    const regex = /^There\sare\s([^\s]*)\sof\sa\smax\sof\s([^\s]*)\splayers\sonline:\s(.*)$/.exec(await rcon.send('list'));
+    const regex = listRegex.exec(await rcon.send('list'));
     if (!regex) return;
     const count = regex[1];
     const max = regex[2];
 
-    client.user.setActivity(`[${count}/${max}] TSB Dev`);
+    await client.user.setPresence({
+        status: 'online',
+        activity: {
+            type: 'PLAYING',
+            name: `[${count}/${max}] TSB Dev`
+        }
+    });
 };
 
 const main = async () => {
     const client = await LaunchClient(conf.discord);
-    const rcon = await LaunchRcon(conf.rcon);
-
-    process.on('SIGINT', async () => {
-        client.destroy();
-        await rcon.end();
-
-        process.exit();
-    });
+    let rcon = await LaunchRcon(conf.rcon);
+    const channel = client.channels.cache.get(conf.discord.chatChannel) as TextChannel;
+    if (!channel) return;
 
     client.on('message', async msg => {
         if (msg.author.bot) return;
@@ -41,25 +45,61 @@ const main = async () => {
             await Command(msg, client, rcon);
             return;
         }
+        if (!rcon.socket) return;
 
-        await rcon.send(`tellraw @a {"text": "<${msg.author.username}> ${msg.content}"}`);
+        await rcon.send(`tellraw @a {"text": "<${msg.author.username}> ${msg.content.replace(/\n/g, '\\n')}"}`);
         console.log(`<${msg.author.username}> ${msg.content}`);
     });
 
     setBotStatus(client, rcon);
 
-    LogWatcher(conf.logPath, async ({ message }) => {
-        const channel = client.channels.cache.get(conf.discord.chatChannel) as TextChannel;
-        if (!channel) return;
+    setInterval(async () => {
+        if (!rcon.socket) {
+            await channel.setTopic('[5分毎更新] サーバー停止中');
+            return;
+        }
 
+        const regex = listRegex.exec(await rcon.send('list'));
+        if (!regex) return;
+
+        const users = regex[3];
+        await channel.setTopic(`[5分毎更新] ログイン中: ${users}`).catch(err => console.log(err));
+    }, 5 * 60 * 1000);
+
+    const logWatcher = LogWatcher(conf.logPath, async ({ message }) => {
         const parserResult = LogParser(message);
         if (!parserResult) return;
 
-        channel.send(parserResult.message);
+        await channel.send(parserResult.message);
 
-        if (parserResult.type === 'system') {
-            setBotStatus(client, rcon);
+        if (parserResult.type === 'chat') return;
+
+        if (parserResult.type === 'stop') {
+            if (!client.user) return;
+
+            await client.user.setPresence({
+                status: 'dnd',
+                activity: {
+                    type: 'PLAYING',
+                    name: '[サーバー停止] TSB Dev'
+                }
+            });
         }
+        else if (parserResult.type === 'start') {
+            rcon = await LaunchRcon(conf.rcon);
+            await setBotStatus(client, rcon);
+        }
+        else {
+            await setBotStatus(client, rcon);
+        }
+    });
+
+    process.on('SIGINT', async () => {
+        client.destroy();
+        await rcon.end();
+        await logWatcher.close();
+
+        process.exit();
     });
 };
 main();

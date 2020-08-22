@@ -5,7 +5,10 @@ type ChatData = {
 
 type LogType =
     | 'chat'
-    | 'system';
+    | 'login'
+    | 'logout'
+    | 'start'
+    | 'stop';
 
 type ParserResult = {
     type: LogType;
@@ -15,6 +18,8 @@ type ParserResult = {
 const chatRegex = /^<([^>]*)>\s(.*)$/;
 const loginRegex = /^([^[]*)\[[^\]]*\]\slogged\sin\swith\sentity\sid.*$/;
 const logoutRegex = /^([^\s]*)\slost\sconnection:\sDisconnected$/;
+const startRegex = /^Done\s\([^)]*\)!\sFor\shelp,\stype\s"help"$/;
+const stopRegex = /^Stopping\sserver$/;
 
 const parseChat = (message: string): ChatData => {
     const regex = chatRegex.exec(message);
@@ -44,7 +49,7 @@ export const LogParser = (log: string): ParserResult | null => {
         console.log(`<${chat.username}> ${chat.message}`);
         return {
             type: 'chat',
-            message: `【**${chat.username}**】${chat.message}`
+            message: `\`<${chat.username}>\` ${chat.message}`
         };
     }
     else if (loginRegex.test(log)) {
@@ -52,8 +57,8 @@ export const LogParser = (log: string): ParserResult | null => {
 
         console.log(`${username} がログインしました`);
         return {
-            type: 'system',
-            message: `**${username}** がログインしました`
+            type: 'login',
+            message: `> \`${username}\` がログインしました`
         };
     }
     else if (logoutRegex.test(log)) {
@@ -61,8 +66,20 @@ export const LogParser = (log: string): ParserResult | null => {
 
         console.log(`${username} がログアウトしました`);
         return {
-            type: 'system',
-            message: `**${username}** がログアウトしました`
+            type: 'logout',
+            message: `> \`${username}\` がログアウトしました`
+        };
+    }
+    else if (startRegex.test(log)) {
+        return {
+            type: 'start',
+            message: '> サーバーが起動しました'
+        };
+    }
+    else if (stopRegex.test(log)) {
+        return {
+            type: 'stop',
+            message: '> サーバーが停止しました'
         };
     }
     else return null;

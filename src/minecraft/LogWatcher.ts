@@ -8,20 +8,24 @@ type MinecraftLog = {
     message: string;
 };
 
-export const LogWatcher = (logPath: string, detectMessage: (log: MinecraftLog) => void): void => {
+export const LogWatcher = (logPath: string, detectMessage: (log: MinecraftLog) => void): chokidar.FSWatcher => {
     console.log('ログ監視を開始');
-    const watcher = chokidar.watch(logPath, { persistent: true });
+    const watcher = chokidar.watch(logPath, { persistent: false });
 
     let pos = statSync(logPath).size;
 
     watcher.on('ready', () => {
         watcher.on('change', async (_path, stats) => {
             if (!stats) return;
+            if (stats.size < 2) return;
+
+            if (stats.size < pos) pos = 0;
 
             const stream = createReadStream(logPath, {
                 start: pos,
                 end: stats.size - 2
             });
+
             const lines = await StreamToString(stream);
             for (const line of lines.split('\n')) {
                 const regex = /\[([^\]]*)\]\s\[[^\]]*\]:\s(.*)\n?/.exec(line);
@@ -35,4 +39,6 @@ export const LogWatcher = (logPath: string, detectMessage: (log: MinecraftLog) =
             pos = stats.size;
         });
     });
+
+    return watcher;
 };
