@@ -1,0 +1,17 @@
+# vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# logs
+logs
+*.log
+
+# exclodes
+node_modules
+dist
+config.yml
+teleportpoints.json

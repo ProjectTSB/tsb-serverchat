@@ -1,0 +1,10 @@
+{
+    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "extensions.ignoreRecommendations": false,
+    "eslint.nodePath": "./node_modules/eslint",
+    "eslint.packageManager": "yarn",
+    "eslint.alwaysShowStatus": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    }
+}
