@@ -2,6 +2,7 @@
 
 [![License_Badge][]][License]
 [![CI_Badge][]][CI]
+![Version_Badge][]
 
 TSB開発サーバーとTSB Discordのチャットを連携するプログラム
 
@@ -78,6 +79,7 @@ Schematicファイルを削除します
 
 [License_Badge]: https://img.shields.io/github/license/TheSkyBlock/tsb-serverchat
 [CI_Badge]: https://img.shields.io/github/workflow/status/TheSkyBlock/tsb-serverchat/CI/next?logo=github&label=CI
+[Version_Badge]: https://img.shields.io/github/package-json/v/TheSkyBlock/tsb-serverchat/next
 
 [License]:./LICENSE
 [CI]: https://github.com/TheSkyBlock/tsb-serverchat/actions?query=workflow%3ACI
