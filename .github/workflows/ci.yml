@@ -1,9 +1,9 @@
-name: Node.js CI
+name: CI
 on:
     push:
     pull_request:
 jobs:
-    build:
+    linter:
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -16,7 +16,5 @@ jobs:
                 node-version: ${{ matrix.node-version }}
 
           - run: rm -rf node_modules
-          - run: yarn --frozen-lockfile
-
-          - name: Linter
-            run: yarn lint
+          - run: yarn --frozen-lockfile --non-interactive
+          - run: yarn lint
