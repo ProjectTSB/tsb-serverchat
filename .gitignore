@@ -6,6 +6,9 @@
 !.vscode/extensions.json
 *.code-workspace
 
+# jest
+coverage
+
 # logs
 logs
 *.log
