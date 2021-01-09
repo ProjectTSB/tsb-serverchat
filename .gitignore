@@ -16,5 +16,5 @@ logs
 # exclodes
 node_modules
 dist
-config.yml
+config.json
 teleportpoints.json

@@ -6,5 +6,9 @@
     "eslint.alwaysShowStatus": true,
     "editor.codeActionsOnSave": {
         "source.fixAll": true
+    },
+    "files.associations": {
+        "config.json": "jsonc",
+        "config.template.json": "jsonc"
     }
 }
