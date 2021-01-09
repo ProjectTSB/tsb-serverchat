@@ -1,5 +1,17 @@
-import { Config } from '@/Config';
+import { emitKeypressEvents, Key } from 'readline';
 
-console.log(Config.Discord);
-console.log(Config.Rcon);
-console.log(Config.Minecraft);
+import { DiscordBotClient } from '@/discord/DiscordBotClient';
+
+const discordBotClient = new DiscordBotClient();
+
+discordBotClient.Launch();
+
+// `Ctrl+C` に割り込む
+emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
+process.stdin.on('keypress', async (_key: string, keyData: Key) => {
+    if (keyData.ctrl && keyData.name === 'c') {
+        discordBotClient.Destroy();
+        process.exit();
+    }
+});
