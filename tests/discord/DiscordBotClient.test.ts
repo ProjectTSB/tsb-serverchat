@@ -1,4 +1,4 @@
-import Discord, { Client } from 'discord.js';
+import Discord, { Client, ChannelManager, TextChannel, Guild } from 'discord.js';
 
 import { DiscordBotClient } from '@/discord/DiscordBotClient';
 import { Config } from '@/Config';
@@ -15,13 +15,52 @@ Object.defineProperty(Config, 'Discord', {
     }))
 });
 
+Object.defineProperty(Client.prototype, 'api', {
+    get: jest.fn<Api, any[]>(() => ({
+        applications: () => ({
+            guilds: () => ({
+                commands: Object.assign(
+                    () => ({
+                        delete: () => Promise.resolve(Buffer.from([]))
+                    }),
+                    {
+                        get: () => Promise.resolve<ApplicationCommand[]>([
+                            {
+                                id: 'ID',
+                                application_id: 'APPLICATION_ID',
+                                name: 'NAME',
+                                description: 'DESCRIPTION'
+                            }
+                        ]),
+                        post: (opt: ApplicationCommandPost) => Promise.resolve<ApplicationCommand>({
+                            id: 'ID',
+                            application_id: 'APPLICATION_ID',
+                            name: opt.data.name,
+                            description: opt.data.description,
+                            options: opt.data.options
+                        })
+                    }
+                )
+            })
+        }),
+        interactions: () => ({
+            callback: {
+                post: () => Promise.resolve(Buffer.from([]))
+            }
+        })
+    }))
+});
+
 describe('DiscordBotClient', () => {
     let discordBotClient: DiscordBotClient;
+    let client: Client;
+
     let mockSetPresence: jest.SpyInstance;
     let mockLogin: jest.SpyInstance;
 
     beforeEach(() => {
         discordBotClient = new DiscordBotClient();
+        client = discordBotClient['client'];
         // @ts-ignore
         discordBotClient['client'].user = new ClientUser(discordBotClient['client'], {});
 
@@ -92,23 +131,109 @@ describe('DiscordBotClient', () => {
     });
 
     test('SetBotStatus(status) Not executed', async () => {
-        discordBotClient['client'].user = null;
+        client.user = null;
 
         await expect(discordBotClient.SetBotStatus('online')).resolves.toBeUndefined();
 
         expect(mockSetPresence).toBeCalledTimes(0);
     });
 
-    test('client_onReady()', async () => {
-        await expect(discordBotClient['client_onReady']()).resolves.toBeUndefined();
-
-        expect(mockSetPresence).toBeCalledTimes(1);
-        expect(mockSetPresence.mock.calls[0][0]).toEqual<Discord.PresenceData>({
-            status: expect.anything(),
-            activity: {
-                type: expect.anything(),
-                name: expect.anything()
+    test('getCommands()', async () => {
+        await expect(discordBotClient['getCommands']()).resolves.toEqual<ApplicationCommand[]>([
+            {
+                id: 'ID',
+                application_id: 'APPLICATION_ID',
+                name: 'NAME',
+                description: 'DESCRIPTION'
             }
+        ]);
+    });
+
+    test('registerCommand(opt)', async () => {
+        await expect(discordBotClient['registerCommand']({
+            name: 'NAME',
+            description: 'DESCRIPTION'
+        })).resolves.toEqual<ApplicationCommand>({
+            id: 'ID',
+            application_id: 'APPLICATION_ID',
+            name: 'NAME',
+            description: 'DESCRIPTION'
         });
+    });
+
+    test('deleteCommand(commandId)', async () => {
+        await expect(discordBotClient['deleteCommand']('COMMAND_ID')).resolves.toBeUndefined();
+    });
+
+    describe('client_onReady()', () => {
+        let mockChannelManagerFetch: jest.SpyInstance;
+
+        beforeEach(() => {
+            const textChannel = new TextChannel(expect.anything());
+            textChannel.guild = new Guild(client, {});
+            textChannel.guild.id = 'AAA';
+
+            mockChannelManagerFetch = jest.spyOn(ChannelManager.prototype, 'fetch').mockResolvedValue(textChannel);
+
+            client.channels = new ChannelManager(client, []);
+            // @ts-ignore
+            client.ws = {
+                on: jest.fn()
+            };
+        });
+
+        afterEach(() => {
+            mockChannelManagerFetch.mockClear();
+        });
+
+        test('client_onReady()', async () => {
+            await expect(discordBotClient['client_onReady']()).resolves.toBeUndefined();
+
+            expect(mockSetPresence).toBeCalledTimes(1);
+            expect(mockSetPresence.mock.calls[0][0]).toEqual<Discord.PresenceData>({
+                status: expect.anything(),
+                activity: {
+                    type: expect.anything(),
+                    name: expect.anything()
+                }
+            });
+        });
+
+        test('client_onReady() No user', async () => {
+            client.user = null;
+
+            await expect(discordBotClient['client_onReady']()).resolves.toBeUndefined();
+
+            expect(mockSetPresence).not.toBeCalled();
+        });
+    });
+
+    test('clientWs_onInteractionCreate(interaction)', async () => {
+        discordBotClient['commandResponces'] = [
+            {
+                id: 'ID',
+                func: jest.fn()
+            },
+            {
+                id: 'ID2',
+                func: jest.fn()
+            }
+        ];
+
+        const dummyInteraction: Required<Interaction> = {
+            id: 'ID',
+            type: 1,
+            data: {
+                id: 'ID',
+                name: 'NAME'
+            },
+            guild_id: 'GUILD_ID',
+            channel_id: 'CHANNEL_ID',
+            member: jest.fn() as unknown as Discord.GuildMember,
+            token: 'TOKEN',
+            version: 0
+        };
+
+        await expect(discordBotClient['clientWs_onInteractionCreate'](dummyInteraction)).resolves.toBeUndefined();
     });
 });

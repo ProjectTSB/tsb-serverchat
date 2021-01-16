@@ -30,3 +30,12 @@ type ConfigData = {
         serverPath: string;
     };
 };
+
+type PartialOptional<T, K extends keyof T> = {
+    [P in K]?: T[P];
+} & {
+    [P in keyof Omit<T, K>]: T[P];
+};
+
+type ApplicationCommandWithoutId =
+    PartialOptional<ApplicationCommand, 'id' | 'application_id'>;
