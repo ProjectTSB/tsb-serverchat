@@ -138,6 +138,21 @@ describe('DiscordBotClient', () => {
         expect(mockSetPresence).toBeCalledTimes(0);
     });
 
+    test('RegisterCommand(opt, callback)', async () => {
+        const dummyOpt: ApplicationCommandWithoutId = {
+            name: 'NAME',
+            description: 'DESCRIPTION'
+        };
+
+        const dummyCallback = jest.fn();
+
+        await expect(discordBotClient.RegisterCommand(dummyOpt, dummyCallback)).resolves.toBeUndefined();
+    });
+
+    test('DeleteAllCommands()', async () => {
+        await expect(discordBotClient.DeleteAllCommands()).resolves.toBeUndefined();
+    });
+
     test('getCommands()', async () => {
         await expect(discordBotClient['getCommands']()).resolves.toEqual<ApplicationCommand[]>([
             {
@@ -209,16 +224,8 @@ describe('DiscordBotClient', () => {
     });
 
     test('clientWs_onInteractionCreate(interaction)', async () => {
-        discordBotClient['commandResponces'] = [
-            {
-                id: 'ID',
-                func: jest.fn()
-            },
-            {
-                id: 'ID2',
-                func: jest.fn()
-            }
-        ];
+        discordBotClient['commandResponces']['ID'] = jest.fn();
+        discordBotClient['commandResponces']['ID2'] = jest.fn();
 
         const dummyInteraction: Required<Interaction> = {
             id: 'ID',

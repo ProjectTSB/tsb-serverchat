@@ -2,10 +2,9 @@ import { Client, PresenceStatusData, TextChannel } from 'discord.js';
 
 import { Config } from '@/Config';
 
-type CommandResponce = {
-    id: string;
-    func: (interaction: Required<Interaction>) => Promise<InteractionResponse>;
-}
+type CommandResponces = {
+    [key: string]: (interaction: Required<Interaction>) => Promise<InteractionResponse>;
+};
 
 export class DiscordBotClient {
     private client: Client;
@@ -13,7 +12,7 @@ export class DiscordBotClient {
     private userId = '';
     private guildId = '';
 
-    private commandResponces: CommandResponce[] = [];
+    private commandResponces: CommandResponces = {};
 
     public constructor() {
         this.client = new Client();
@@ -40,6 +39,11 @@ export class DiscordBotClient {
         this.client.destroy();
     }
 
+    /**
+     * Botのステータスを設定する
+     * @param status Botのステータス
+     * @param text 表示するテキスト
+     */
     public async SetBotStatus(status: PresenceStatusData, text?: string): Promise<void> {
         if (!this.client.user) return;
 
@@ -50,6 +54,25 @@ export class DiscordBotClient {
                 name: text
             } : undefined
         });
+    }
+
+    /**
+     * コマンドを登録する
+     * @param opt コマンド定義
+     * @param callback コマンドに対する応答
+     */
+    public async RegisterCommand(opt: ApplicationCommandWithoutId, callback: CommandResponces[number]): Promise<void> {
+        const command = await this.registerCommand(opt);
+
+        this.commandResponces[command.id] = callback;
+    }
+
+    /**
+     * コマンドを全て削除する
+     */
+    public async DeleteAllCommands(): Promise<void> {
+        const commands = await this.getCommands();
+        await Promise.all(commands.map(command => this.deleteCommand(command.id)));
     }
 
     /**
@@ -99,22 +122,18 @@ export class DiscordBotClient {
         this.guildId = channel.guild.id;
 
         console.log('[Discord]: コマンドを初期化しています');
-        const commands = await this.getCommands();
-        await Promise.all(commands.map(command => this.deleteCommand(command.id)));
+        await this.DeleteAllCommands();
 
         // TODO: 確認用 後で消す
         // const testCommand = await this.registerCommand({
         //     name: 'test',
         //     description: 'テストコマンド'
         // });
-        // this.commandResponces.push({
-        //     id: testCommand.id,
-        //     func: async () => ({
-        //         type: 2,
-        //         data: {
-        //             content: 'テスト'
-        //         }
-        //     })
+        // this.commandResponces[testCommand.id] = async () => ({
+        //     type: 2,
+        //     data: {
+        //         content: 'テスト'
+        //     }
         // });
 
         this.client.ws.on('INTERACTION_CREATE', this.clientWs_onInteractionCreate.bind(this));
@@ -128,14 +147,14 @@ export class DiscordBotClient {
      * @param interaction
      */
     private async clientWs_onInteractionCreate(interaction: Required<Interaction>) {
-        for (const res of this.commandResponces) {
-            if (res.id === interaction.data.id) {
+        Object.keys(this.commandResponces).forEach(async id => {
+            if (id === interaction.data.id) {
                 this.client.api
                     .interactions(interaction.id, interaction.token)
                     .callback.post({
-                        data: await res.func(interaction)
+                        data: await this.commandResponces[id](interaction)
                     });
             }
-        }
+        });
     }
 }
