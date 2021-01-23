@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import fs from 'fs';
 
 import { Config } from '@/Config';
@@ -28,20 +30,21 @@ describe('Config', () => {
 
     afterAll(() => {
         mockReadFileSync.mockClear();
-
-        // @ts-ignore
-        Config.confCache = null;
     });
 
     test('Discord', () => {
-        expect(Config.Discord).toEqual<ConfigData['discord']>({
+        const config = new Config();
+
+        expect(config.Discord).toEqual<ConfigData['discord']>({
             token: 'DISCORD_TOKEN',
             chatChannel: 'DISCORD_CHAT_CHANNEL'
         });
     });
 
     test('Rcon', () => {
-        expect(Config.Rcon).toEqual<ConfigData['rcon']>({
+        const config = new Config();
+
+        expect(config.Rcon).toEqual<ConfigData['rcon']>({
             host: 'RCON_HOST',
             port: 25575,
             password: 'RCON_PASSWORD'
@@ -49,9 +52,22 @@ describe('Config', () => {
     });
 
     test('Minecraft', () => {
-        expect(Config.Minecraft).toEqual<ConfigData['minecraft']>({
+        const config = new Config();
+
+        expect(config.Minecraft).toEqual<ConfigData['minecraft']>({
             serverPath: 'MINECRAFT_SERVER_PATH'
         });
+    });
+
+    test('confCache', () => {
+        const config = new Config();
+        config['confCache'] = {
+            discord: expect.anything(),
+            rcon: expect.anything(),
+            minecraft: expect.anything()
+        };
+
+        expect(config.Discord).toEqual(expect.anything());
     });
 });
 
@@ -61,7 +77,9 @@ describe('Config Error', () => {
         const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
         expect(mockConsoleError).not.toBeCalled();
 
-        expect(() => Config.Discord).toThrow();
+        const config = new Config();
+
+        expect(() => config.Discord).toThrow();
 
         mockReadFileSync.mockClear();
         mockConsoleError.mockClear();

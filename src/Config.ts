@@ -1,43 +1,45 @@
 import { readFileSync } from 'fs';
+import { singleton } from 'tsyringe';
 import * as JSONC from 'jsonc-parser';
 
+@singleton<Config>()
 export class Config {
     /**
      * Discordに関するコンフィグ
      */
-    public static get Discord(): ConfigData['discord'] {
+    public get Discord(): ConfigData['discord'] {
         return this.getData().discord;
     }
 
     /**
      * Rconに関するコンフィグ
      */
-    public static get Rcon(): ConfigData['rcon'] {
+    public get Rcon(): ConfigData['rcon'] {
         return this.getData().rcon;
     }
 
     /**
      * Minecraftに関するコンフィグ
      */
-    public static get Minecraft(): ConfigData['minecraft'] {
+    public get Minecraft(): ConfigData['minecraft'] {
         return this.getData().minecraft;
     }
 
     /**
      * コンフィグファイルのパス
      */
-    private static readonly confPath = 'config.json';
+    private readonly confPath = 'config.json';
 
     /**
      * コンフィグのキャッシュデータ
      */
-    private static confCache: ConfigData | null = null;
+    private confCache: ConfigData | null = null;
 
     /**
      * コンフィグデータを取得\
      * まだデータを読み込んでいない場合は読み込んで返す
      */
-    private static getData(): ConfigData {
+    private getData(): ConfigData {
         if (!this.confCache) {
             this.confCache = this.readConf();
         }
@@ -48,7 +50,7 @@ export class Config {
     /**
      * コンフィグファイルからデータを読み込む
      */
-    private static readConf(): ConfigData {
+    private readConf(): ConfigData {
         try {
             const file = readFileSync(this.confPath, 'utf-8');
 

@@ -1,4 +1,5 @@
 import { Client, PresenceStatusData, TextChannel } from 'discord.js';
+import { injectable, inject } from 'tsyringe';
 
 import { Config } from '@/Config';
 
@@ -6,16 +7,17 @@ type CommandResponces = {
     [key: string]: (interaction: Required<Interaction>) => Promise<InteractionResponse>;
 };
 
+@injectable<DiscordBotClient>()
 export class DiscordBotClient {
-    private client: Client;
-
     private userId = '';
     private guildId = '';
 
     private commandResponces: CommandResponces = {};
 
-    public constructor() {
-        this.client = new Client();
+    public constructor(
+        @inject(Config) private config: Config,
+        @inject(Client) private client: Client
+    ) {
         this.client.on('ready', this.client_onReady.bind(this));
     }
 
@@ -24,10 +26,10 @@ export class DiscordBotClient {
      */
     public async Launch(): Promise<void> {
         try {
-            await this.client.login(Config.Discord.token);
+            await this.client.login(this.config.Discord.token);
         }
-        catch {
-            console.error('Botの起動に失敗しました');
+        catch (err) {
+            console.error('Botの起動に失敗しました', err.message);
             process.exit(1);
         }
     }
@@ -118,7 +120,7 @@ export class DiscordBotClient {
             this.userId = this.client.user.id;
         }
 
-        const channel: TextChannel = (await this.client.channels.fetch(Config.Discord.chatChannel)) as TextChannel;
+        const channel: TextChannel = (await this.client.channels.fetch(this.config.Discord.chatChannel)) as TextChannel;
         this.guildId = channel.guild.id;
 
         console.log('[Discord]: コマンドを初期化しています');

@@ -1,8 +1,14 @@
+import 'reflect-metadata';
+
 import { emitKeypressEvents, Key } from 'readline';
+import { Client } from 'discord.js';
+import { container } from 'tsyringe';
 
 import { DiscordBotClient } from '@/discord/DiscordBotClient';
 
-const discordBotClient = new DiscordBotClient();
+container.register(Client, { useClass: Client });
+
+const discordBotClient = container.resolve(DiscordBotClient);
 
 discordBotClient.Launch();
 

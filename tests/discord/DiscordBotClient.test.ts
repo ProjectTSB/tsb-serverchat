@@ -1,4 +1,7 @@
+import 'reflect-metadata';
+
 import Discord, { Client, ChannelManager, TextChannel, Guild } from 'discord.js';
+import { container } from 'tsyringe';
 
 import { DiscordBotClient } from '@/discord/DiscordBotClient';
 import { Config } from '@/Config';
@@ -8,7 +11,7 @@ jest.mock('@/Config');
 
 const { ClientUser } = jest.requireActual<typeof Discord>('discord.js');
 
-Object.defineProperty(Config, 'Discord', {
+Object.defineProperty(Config.prototype, 'Discord', {
     get: jest.fn<ConfigData['discord'], any[]>(() => ({
         token: 'DISCORD_TOKEN',
         chatChannel: 'DISCORD_CHAT_CHANNEL'
@@ -59,7 +62,7 @@ describe('DiscordBotClient', () => {
     let mockLogin: jest.SpyInstance;
 
     beforeEach(() => {
-        discordBotClient = new DiscordBotClient();
+        discordBotClient = container.resolve(DiscordBotClient);
         client = discordBotClient['client'];
         // @ts-ignore
         discordBotClient['client'].user = new ClientUser(discordBotClient['client'], {});
