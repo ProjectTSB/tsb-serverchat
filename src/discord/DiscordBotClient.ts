@@ -1,13 +1,14 @@
 import { Client, PresenceStatusData, TextChannel } from 'discord.js';
-import { injectable, inject } from 'tsyringe';
+import { singleton, inject } from 'tsyringe';
 
 import { Config } from '@/Config';
+import { CommandBase } from '@/discord/util/CommandBase';
 
 type CommandResponces = {
     [key: string]: (interaction: Required<Interaction>) => Promise<InteractionResponse>;
 };
 
-@injectable<DiscordBotClient>()
+@singleton<DiscordBotClient>()
 export class DiscordBotClient {
     private userId = '';
     private guildId = '';
@@ -125,18 +126,7 @@ export class DiscordBotClient {
 
         console.log('[Discord]: コマンドを初期化しています');
         await this.DeleteAllCommands();
-
-        // TODO: 確認用 後で消す
-        // const testCommand = await this.registerCommand({
-        //     name: 'test',
-        //     description: 'テストコマンド'
-        // });
-        // this.commandResponces[testCommand.id] = async () => ({
-        //     type: 2,
-        //     data: {
-        //         content: 'テスト'
-        //     }
-        // });
+        await CommandBase.RegisterAllCommands();
 
         this.client.ws.on('INTERACTION_CREATE', this.clientWs_onInteractionCreate.bind(this));
 

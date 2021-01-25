@@ -8,6 +8,10 @@ import { Config } from '@/Config';
 
 jest.mock('discord.js');
 jest.mock('@/Config');
+jest.mock('@/discord/util/CommandBase');
+jest.mock('@/discord/util/requireContext', () => ({
+    requireContext: jest.fn()
+}));
 
 const { ClientUser } = jest.requireActual<typeof Discord>('discord.js');
 
