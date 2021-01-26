@@ -27,7 +27,8 @@
     },
     "dependencies": {
         "discord.js": "^12.5.1",
-        "jsonc-parser": "^3.0.0"
+        "jsonc-parser": "^3.0.0",
+        "rcon-client": "^4.2.3"
     },
     "devDependencies": {
         "@types/jest": "^26.0.20",
