@@ -1,4 +1,7 @@
+import { injectable, inject } from 'tsyringe';
+
 import { CommandBase } from '@/discord/util/CommandBase';
+import { RconClient } from '@/rcon/RconClient';
 
 type CmdInteraction = Interaction & {
     data: ApplicationCommandInteractionData & {
@@ -11,6 +14,7 @@ type CmdInteraction = Interaction & {
     };
 };
 
+@injectable<CommandBase>()
 export class CmdCommand extends CommandBase {
     protected get command(): ApplicationCommandWithoutId {
         return {
@@ -27,19 +31,45 @@ export class CmdCommand extends CommandBase {
         };
     }
 
+    public constructor(
+        @inject(RconClient) private rconClient: RconClient
+    ) {
+        super();
+    }
+
     protected async callback(interaction: CmdInteraction): Promise<InteractionResponse> {
         const mcCommand = interaction.data.options[0].value;
 
-        // TODO: cmdコマンド処理の実装
+        try {
+            const result = await this.rconClient.Send(mcCommand);
 
-        return {
-            type: 4,
-            data: {
-                content: [
-                    '[WIP] /cmd',
-                    `command: ${mcCommand}`
-                ].join('\n')
-            }
-        };
+            return {
+                type: 4,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'コマンドを送信しました',
+                            description: result.replace(/§./g, '') || ''
+                        }
+                    ]
+                }
+            };
+        }
+        catch {
+            return {
+                type: 4,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'コマンドの送信に失敗しました',
+                            description: 'サーバーが起動していない可能性があります',
+                            color: 0xff0000
+                        }
+                    ]
+                }
+            };
+        }
     }
 }
