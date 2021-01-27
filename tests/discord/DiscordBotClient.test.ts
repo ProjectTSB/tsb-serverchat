@@ -1,14 +1,16 @@
 import 'reflect-metadata';
 
-import Discord, { Client, ChannelManager, TextChannel, Guild } from 'discord.js';
+import Discord, { Client, ChannelManager, TextChannel, Guild, Message } from 'discord.js';
 import { container } from 'tsyringe';
 
 import { DiscordBotClient } from '@/discord/DiscordBotClient';
 import { Config } from '@/Config';
+import { RconClient } from '@/rcon/RconClient';
 
 jest.mock('discord.js');
 jest.mock('@/Config');
 jest.mock('@/discord/util/CommandBase');
+jest.mock('@/rcon/RconClient');
 jest.mock('@/discord/util/requireContext', () => ({
     requireContext: jest.fn()
 }));
@@ -228,6 +230,92 @@ describe('DiscordBotClient', () => {
 
             expect(mockSetPresence).not.toBeCalled();
         });
+    });
+
+    test('client_onMessage(message) is Bot', async () => {
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        // @ts-ignore
+        message.author = {
+            bot: true
+        };
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+    });
+
+    test('client_onMessage(message) is System', async () => {
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        // @ts-ignore
+        message.author = {
+            bot: false
+        };
+        message.system = true;
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+    });
+
+    test('client_onMessage(message) wrong chatChannel', async () => {
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        // @ts-ignore
+        message.author = {
+            bot: false
+        };
+        message.system = false;
+        // @ts-ignore
+        message.channel = {
+            id: 'WRONG_CHAT_CHANNEL'
+        };
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+    });
+
+    test('client_onMessage(message)', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockRejectedValue(Error());
+
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        // @ts-ignore
+        message.author = {
+            bot: false,
+            username: 'USERNAME'
+        };
+        message.system = false;
+        // @ts-ignore
+        message.channel = {
+            id: 'DISCORD_CHAT_CHANNEL'
+        };
+        message.content = 'CONTENT';
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend.mock.calls[0][0]).toEqual(expect.anything());
+        mockRconClientSend.mockClear();
+    });
+
+    test('client_onMessage(message) Error', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockRejectedValue(Error());
+
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        // @ts-ignore
+        message.author = {
+            bot: false,
+            username: 'USERNAME'
+        };
+        message.system = false;
+        // @ts-ignore
+        message.channel = {
+            id: 'DISCORD_CHAT_CHANNEL'
+        };
+        message.content = 'CONTENT';
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        mockRconClientSend.mockClear();
     });
 
     test('clientWs_onInteractionCreate(interaction)', async () => {

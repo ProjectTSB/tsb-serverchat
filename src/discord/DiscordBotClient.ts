@@ -1,8 +1,9 @@
-import { Client, PresenceStatusData, TextChannel } from 'discord.js';
+import { Client, PresenceStatusData, TextChannel, Message } from 'discord.js';
 import { singleton, inject } from 'tsyringe';
 
 import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
+import { RconClient } from '@/rcon/RconClient';
 
 type CommandResponces = {
     [key: string]: (interaction: Required<Interaction>) => Promise<InteractionResponse>;
@@ -17,9 +18,11 @@ export class DiscordBotClient {
 
     public constructor(
         @inject(Config) private config: Config,
-        @inject(Client) private client: Client
+        @inject(Client) private client: Client,
+        @inject(RconClient) private rconClient: RconClient
     ) {
-        this.client.on('ready', this.client_onReady.bind(this));
+        client.on('ready', this.client_onReady.bind(this));
+        client.on('message', this.client_onMessage.bind(this));
     }
 
     /**
@@ -132,6 +135,23 @@ export class DiscordBotClient {
 
         await this.SetBotStatus('dnd', '開発');
         console.log('[Discord]: Botが起動しました');
+    }
+
+    private async client_onMessage(message: Message) {
+        if (message.author.bot) return;
+        if (message.system) return;
+        if (message.channel.id !== this.config.Discord.chatChannel) return;
+
+        const username = message.author.username;
+        const text = message.content.replace(/\n/g, '\\n');
+
+        try {
+            console.log(`<${username}> ${text}`);
+            await this.rconClient.Send(`tellraw @a {"text": "<${username}> ${text}"}`);
+        }
+        catch {
+            console.log('[Discord]: メッセージの送信に失敗しました');
+        }
     }
 
     /**
