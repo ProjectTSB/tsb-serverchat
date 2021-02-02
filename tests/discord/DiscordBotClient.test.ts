@@ -11,6 +11,7 @@ jest.mock('discord.js');
 jest.mock('@/Config');
 jest.mock('@/discord/util/CommandBase');
 jest.mock('@/rcon/RconClient');
+jest.mock('@/minecraft/MCLogWatcher');
 jest.mock('@/discord/util/requireContext', () => ({
     requireContext: jest.fn()
 }));
@@ -162,31 +163,31 @@ describe('DiscordBotClient', () => {
         await expect(discordBotClient.DeleteAllCommands()).resolves.toBeUndefined();
     });
 
-    test('getCommands()', async () => {
-        await expect(discordBotClient['getCommands']()).resolves.toEqual<ApplicationCommand[]>([
-            {
-                id: 'ID',
-                application_id: 'APPLICATION_ID',
-                name: 'NAME',
-                description: 'DESCRIPTION'
-            }
-        ]);
-    });
+    test('getLoginUsers()', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send')
+            .mockResolvedValue('There are 1 of a max of 20 players online: HOGE');
 
-    test('registerCommand(opt)', async () => {
-        await expect(discordBotClient['registerCommand']({
-            name: 'NAME',
-            description: 'DESCRIPTION'
-        })).resolves.toEqual<ApplicationCommand>({
-            id: 'ID',
-            application_id: 'APPLICATION_ID',
-            name: 'NAME',
-            description: 'DESCRIPTION'
+        await expect(discordBotClient['getLoginUsers']()).resolves.toEqual({
+            count: '1',
+            max: '20',
+            users: [
+                'HOGE'
+            ]
         });
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend.mock.calls[0][0]).toBe('list');
+        mockRconClientSend.mockClear();
     });
 
-    test('deleteCommand(commandId)', async () => {
-        await expect(discordBotClient['deleteCommand']('COMMAND_ID')).resolves.toBeUndefined();
+    test('getLoginUsers() null', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockResolvedValue('');
+
+        await expect(discordBotClient['getLoginUsers']()).resolves.toBeNull();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend.mock.calls[0][0]).toBe('list');
+        mockRconClientSend.mockClear();
     });
 
     describe('client_onReady()', () => {
@@ -337,5 +338,101 @@ describe('DiscordBotClient', () => {
         };
 
         await expect(discordBotClient['clientWs_onInteractionCreate'](dummyInteraction)).resolves.toBeUndefined();
+    });
+
+    test('mcLogWatcher_onPlayerChat(name, message) textChannel is null', () => {
+        discordBotClient['textChannel'] = null;
+
+        expect(discordBotClient['mcLogWatcher_onPlayerChat']('NAME', 'MESSAGE')).toBeUndefined();
+    });
+
+    test('mcLogWatcher_onPlayerChat(name, message)', () => {
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        expect(discordBotClient['mcLogWatcher_onPlayerChat']('NAME', 'MESSAGE')).toBeUndefined();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) textChannel is null', async () => {
+        discordBotClient['textChannel'] = null;
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) login, users is null', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockResolvedValue('');
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        mockRconClientSend.mockClear();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) login, zero users', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send')
+            .mockResolvedValue('There are 0 of a max of 20 players online:');
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
+
+        mockRconClientSend.mockClear();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) login', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send')
+            .mockResolvedValue('There are 1 of a max of 20 players online: HOGE');
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
+
+        mockRconClientSend.mockClear();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) logout, users is null', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockResolvedValue('');
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'logout')).resolves.toBeUndefined();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        mockRconClientSend.mockClear();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) logout, zero users', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send')
+            .mockResolvedValue('There are 0 of a max of 20 players online:');
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'logout')).resolves.toBeUndefined();
+
+        mockRconClientSend.mockClear();
+    });
+
+    test('mcLogWatcher_onPlayerAction(name, type) logout', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send')
+            .mockResolvedValue('There are 1 of a max of 20 players online: HOGE');
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(discordBotClient['mcLogWatcher_onPlayerAction']('NAME', 'logout')).resolves.toBeUndefined();
+
+        mockRconClientSend.mockClear();
+    });
+
+    test('mcLogWatcher_onServerLog(type) textChannel is null', async () => {
+        discordBotClient['textChannel'] = null;
+
+        expect(discordBotClient['mcLogWatcher_onServerLog']('start')).toBeUndefined();
+    });
+
+    test('mcLogWatcher_onServerLog(type) start', async () => {
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        expect(discordBotClient['mcLogWatcher_onServerLog']('start')).toBeUndefined();
+    });
+
+    test('mcLogWatcher_onServerLog(type) stop', async () => {
+        discordBotClient['textChannel'] = new TextChannel(expect.anything());
+
+        expect(discordBotClient['mcLogWatcher_onServerLog']('stop')).toBeUndefined();
     });
 });
