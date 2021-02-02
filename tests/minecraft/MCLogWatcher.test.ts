@@ -11,7 +11,7 @@ jest.mock('@/util/streamToString');
 
 const mockStreamToString = streamToString as jest.Mock;
 
-Object.defineProperty(Config.prototype, 'Discord', {
+Object.defineProperty(Config.prototype, 'Minecraft', {
     get: jest.fn<ConfigData['minecraft'], any[]>(() => ({
         serverPath: 'MINECRAFT_SERVER_PATH'
     }))
