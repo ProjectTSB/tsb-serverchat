@@ -29,6 +29,9 @@ describe('MCLogWatcher', () => {
             mtimeMs: new Date().getTime()
         } as fs.Stats);
 
+        const stream = fs.ReadStream.from(Buffer.from('HOGE')) as fs.ReadStream;
+        const mockCreateReadStream = jest.spyOn(fs, 'createReadStream').mockReturnValue(stream);
+
         const mcLogWatcher = container.resolve(MCLogWatcher);
 
         expect(mcLogWatcher.Start()).toBeUndefined();
@@ -57,6 +60,7 @@ describe('MCLogWatcher', () => {
 
         mockFsStatSync.mockClear();
         mockPromisesStat.mockClear();
+        mockCreateReadStream.mockClear();
         mockStreamToString.mockClear();
     });
 
