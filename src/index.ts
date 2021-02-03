@@ -5,7 +5,7 @@ import { Client } from 'discord.js';
 import { Rcon } from 'rcon-client';
 import { container } from 'tsyringe';
 
-import { DiscordBotClient } from '@/discord/DiscordBotClient';
+import { TSBDevServerBot } from '@/discord/TSBDevServerBot';
 import { RconClient } from '@/rcon/RconClient';
 import { Config } from '@/Config';
 
@@ -20,10 +20,10 @@ container.register(Rcon, {
     })
 });
 
-const discordBotClient = container.resolve(DiscordBotClient);
+const tsbDevServerBot = container.resolve(TSBDevServerBot);
 const rconClient = container.resolve(RconClient);
 
-discordBotClient.Launch();
+tsbDevServerBot.Launch();
 rconClient.Launch();
 
 // `Ctrl+C` に割り込む
@@ -32,9 +32,7 @@ process.stdin.setRawMode(true);
 process.stdin.on('keypress', async (_key: string, keyData: Key) => {
     if (keyData.ctrl && keyData.name === 'c') {
         try {
-            // コマンドを消してからBotを停止する
-            await discordBotClient.DeleteAllCommands();
-            discordBotClient.Destroy();
+            await tsbDevServerBot.Destroy();
             await rconClient.Stop();
         }
         finally {
