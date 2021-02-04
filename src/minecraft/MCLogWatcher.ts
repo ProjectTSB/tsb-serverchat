@@ -56,7 +56,7 @@ const REGEX_SERVER_START = /^Done \([^)]*\)! For help, type "help"$/;
 /**
  * サーバー停止の正規表現
  */
-const REGEX_SERVER_STOP = /^Closing Server$/;
+const REGEX_SERVER_STOP = /^Stopping the server$/;
 
 @singleton<MCLogWatcher>()
 export class MCLogWatcher extends EventEmitter {

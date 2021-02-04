@@ -65,8 +65,23 @@ describe('TSBDevServerBot', () => {
         mockRconClientSend.mockClear();
     });
 
+    test('getLoginUsers() reject null', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockRejectedValue(Error());
+
+        await expect(tsbDevServerBot['getLoginUsers']()).resolves.toBeNull();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend.mock.calls[0][0]).toBe('list');
+        mockRconClientSend.mockClear();
+    });
+
     test('discordBotClient_onReady()', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockResolvedValue('');
+
         await expect(tsbDevServerBot['discordBotClient_onReady']()).resolves.toBeUndefined();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        mockRconClientSend.mockClear();
     });
 
     test('discordBotClient_onChat(channelId, username, message)', async () => {
@@ -81,7 +96,6 @@ describe('TSBDevServerBot', () => {
         await expect(tsbDevServerBot['discordBotClient_onChat'](message)).resolves.toBeUndefined();
 
         expect(mockRconClientSend).toBeCalledTimes(1);
-        expect(mockRconClientSend.mock.calls[0][0]).toEqual(expect.anything());
         mockRconClientSend.mockClear();
     });
 
@@ -97,20 +111,19 @@ describe('TSBDevServerBot', () => {
         await expect(tsbDevServerBot['discordBotClient_onChat'](message)).resolves.toBeUndefined();
 
         expect(mockRconClientSend).toBeCalledTimes(1);
-        expect(mockRconClientSend.mock.calls[0][0]).toEqual(expect.anything());
         mockRconClientSend.mockClear();
     });
 
-    test('mcLogWatcher_onPlayerChat(name, message) textChannel is null', () => {
+    test('mcLogWatcher_onPlayerChat(name, message) textChannel is null', async () => {
         tsbDevServerBot['textChannel'] = null;
 
-        expect(tsbDevServerBot['mcLogWatcher_onPlayerChat']('NAME', 'MESSAGE')).toBeUndefined();
+        await expect(tsbDevServerBot['mcLogWatcher_onPlayerChat']('NAME', 'MESSAGE')).resolves.toBeUndefined();
     });
 
-    test('mcLogWatcher_onPlayerChat(name, message)', () => {
+    test('mcLogWatcher_onPlayerChat(name, message)', async () => {
         tsbDevServerBot['textChannel'] = new TextChannel(expect.anything());
 
-        expect(tsbDevServerBot['mcLogWatcher_onPlayerChat']('NAME', 'MESSAGE')).toBeUndefined();
+        await expect(tsbDevServerBot['mcLogWatcher_onPlayerChat']('NAME', 'MESSAGE')).resolves.toBeUndefined();
     });
 
     test('mcLogWatcher_onPlayerAction(name, type) textChannel is null', async () => {
@@ -125,7 +138,7 @@ describe('TSBDevServerBot', () => {
 
         await expect(tsbDevServerBot['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
 
-        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend).toBeCalledTimes(2);
         mockRconClientSend.mockClear();
     });
 
@@ -136,6 +149,7 @@ describe('TSBDevServerBot', () => {
 
         await expect(tsbDevServerBot['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
 
+        expect(mockRconClientSend).toBeCalledTimes(2);
         mockRconClientSend.mockClear();
     });
 
@@ -146,6 +160,7 @@ describe('TSBDevServerBot', () => {
 
         await expect(tsbDevServerBot['mcLogWatcher_onPlayerAction']('NAME', 'login')).resolves.toBeUndefined();
 
+        expect(mockRconClientSend).toBeCalledTimes(2);
         mockRconClientSend.mockClear();
     });
 
@@ -155,7 +170,7 @@ describe('TSBDevServerBot', () => {
 
         await expect(tsbDevServerBot['mcLogWatcher_onPlayerAction']('NAME', 'logout')).resolves.toBeUndefined();
 
-        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend).toBeCalledTimes(2);
         mockRconClientSend.mockClear();
     });
 
@@ -166,6 +181,7 @@ describe('TSBDevServerBot', () => {
 
         await expect(tsbDevServerBot['mcLogWatcher_onPlayerAction']('NAME', 'logout')).resolves.toBeUndefined();
 
+        expect(mockRconClientSend).toBeCalledTimes(2);
         mockRconClientSend.mockClear();
     });
 
@@ -176,24 +192,25 @@ describe('TSBDevServerBot', () => {
 
         await expect(tsbDevServerBot['mcLogWatcher_onPlayerAction']('NAME', 'logout')).resolves.toBeUndefined();
 
+        expect(mockRconClientSend).toBeCalledTimes(2);
         mockRconClientSend.mockClear();
     });
 
     test('mcLogWatcher_onServerLog(type) textChannel is null', async () => {
         tsbDevServerBot['textChannel'] = null;
 
-        expect(tsbDevServerBot['mcLogWatcher_onServerLog']('start')).toBeUndefined();
+        await expect(tsbDevServerBot['mcLogWatcher_onServerLog']('start')).resolves.toBeUndefined();
     });
 
     test('mcLogWatcher_onServerLog(type) start', async () => {
         tsbDevServerBot['textChannel'] = new TextChannel(expect.anything());
 
-        expect(tsbDevServerBot['mcLogWatcher_onServerLog']('start')).toBeUndefined();
+        await expect(tsbDevServerBot['mcLogWatcher_onServerLog']('start')).resolves.toBeUndefined();
     });
 
     test('mcLogWatcher_onServerLog(type) stop', async () => {
         tsbDevServerBot['textChannel'] = new TextChannel(expect.anything());
 
-        expect(tsbDevServerBot['mcLogWatcher_onServerLog']('stop')).toBeUndefined();
+        await expect(tsbDevServerBot['mcLogWatcher_onServerLog']('stop')).resolves.toBeUndefined();
     });
 });

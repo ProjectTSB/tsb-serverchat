@@ -1,8 +1,21 @@
 import { Rcon } from 'rcon-client';
 import { injectable, inject } from 'tsyringe';
 
+type RconError = {
+    errno: number;
+    code: string;
+    syscall: string;
+    address?: string;
+    port?: number;
+};
+
 @injectable<RconClient>()
 export class RconClient {
+    /**
+     * 接続フラグ
+     */
+    private isConnecting = false;
+
     public constructor(
         @inject(Rcon) private rcon: Rcon
     ) {
@@ -16,10 +29,12 @@ export class RconClient {
         try {
             await this.rcon.connect();
 
-            console.log('[Rcon]: Rconが起動しました');
+            this.isConnecting = true;
+
+            console.log('[Rcon]: 起動しました');
         }
         catch {
-            this.rcon_onError();
+            console.log('[Rcon]: 起動に失敗しました');
         }
     }
 
@@ -27,9 +42,16 @@ export class RconClient {
      * Rconを停止
      */
     public async Stop(): Promise<void> {
-        await this.rcon.end();
+        this.isConnecting = false;
 
-        console.log('[Rcon]: Rconが停止しました');
+        try {
+            await this.rcon.end();
+
+            console.log('[Rcon]: 停止しました');
+        }
+        catch {
+            console.log('[Rcon]: 既に停止しています');
+        }
     }
 
     /**
@@ -37,15 +59,18 @@ export class RconClient {
      * @param command Minecraftコマンド
      */
     public async Send(command: string): Promise<string> {
-        return this.rcon.send(command);
+        if (this.isConnecting) {
+            return this.rcon.send(command);
+        }
+        else {
+            return Promise.reject();
+        }
     }
 
     /**
      * Rconエラー時
      */
-    private rcon_onError() {
-        setTimeout(() => {
-            this.Launch();
-        }, 2000);
+    private rcon_onError(err: RconError) {
+        console.log('[Rcon]: エラーが発生しました', err);
     }
 }

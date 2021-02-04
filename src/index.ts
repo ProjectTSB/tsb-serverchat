@@ -6,7 +6,6 @@ import { Rcon } from 'rcon-client';
 import { container } from 'tsyringe';
 
 import { TSBDevServerBot } from '@/discord/TSBDevServerBot';
-import { RconClient } from '@/rcon/RconClient';
 import { Config } from '@/Config';
 
 const config = container.resolve(Config);
@@ -21,10 +20,8 @@ container.register(Rcon, {
 });
 
 const tsbDevServerBot = container.resolve(TSBDevServerBot);
-const rconClient = container.resolve(RconClient);
 
 tsbDevServerBot.Launch();
-rconClient.Launch();
 
 // `Ctrl+C` に割り込む
 emitKeypressEvents(process.stdin);
@@ -33,7 +30,6 @@ process.stdin.on('keypress', async (_key: string, keyData: Key) => {
     if (keyData.ctrl && keyData.name === 'c') {
         try {
             await tsbDevServerBot.Destroy();
-            await rconClient.Stop();
         }
         finally {
             process.exit();

@@ -22,11 +22,11 @@ describe('MCLogWatcher', () => {
         jest.useFakeTimers();
         const mockFsStatSync = jest.spyOn(fs, 'statSync').mockReturnValue({
             size: 100,
-            mtimeMs: new Date().getTime()
+            mtimeMs: 0
         } as fs.Stats);
         let mockPromisesStat = jest.spyOn(fs.promises, 'stat').mockResolvedValue({
             size: 10,
-            mtimeMs: new Date().getTime()
+            mtimeMs: 0
         } as fs.Stats);
 
         const stream = fs.ReadStream.from(Buffer.from('HOGE')) as fs.ReadStream;
@@ -40,7 +40,7 @@ describe('MCLogWatcher', () => {
 
         mockPromisesStat = jest.spyOn(fs.promises, 'stat').mockResolvedValue({
             size: 20,
-            mtimeMs: new Date().getTime()
+            mtimeMs: 1
         } as fs.Stats);
         mockStreamToString.mockResolvedValue([
             '',
@@ -49,7 +49,7 @@ describe('MCLogWatcher', () => {
             '[00:00:00] [Server thread/INFO]: USERNAME joined the game',
             '[00:00:00] [Server thread/INFO]: USERNAME left the game',
             '[00:00:00] [Server thread/INFO]: Done (0.000ms)! For help, type "help"',
-            '[00:00:00] [Server thread/INFO]: Closing Server',
+            '[00:00:00] [Server thread/INFO]: Stopping the server',
             '[00:00:00] [Server thread/INFO]: OTHER LOG'
         ].join('\n'));
 

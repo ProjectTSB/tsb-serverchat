@@ -36,10 +36,12 @@ export class TSBDevServerBot {
     }
 
     /**
-     * Botを終了する
+     * Botを終了する\
+     * ついでにログ監視、Rconも終了
      */
     public async Destroy(): Promise<void> {
         this.mcLogWatcher.Stop();
+        await this.rconClient.Stop();
         await this.discordBotClient.Destroy();
     }
 
@@ -47,17 +49,39 @@ export class TSBDevServerBot {
      * ログイン中のユーザーのリストを返す
      */
     private async getLoginUsers(): Promise<LoginUsers | null> {
-        const listCommandResponce = await this.rconClient.Send('list');
-        const regexListCommand = REGEX_LIST_COMMAND.exec(listCommandResponce);
-        if (!regexListCommand) return null;
+        try {
+            const listCommandResponce = await this.rconClient.Send('list');
+            const regexListCommand = REGEX_LIST_COMMAND.exec(listCommandResponce);
+            if (!regexListCommand) return null;
 
-        const [, count, max, users] = regexListCommand;
+            const [, count, max, users] = regexListCommand;
 
-        return {
-            count,
-            max,
-            users: users.split(', ').filter(x => x !== '')
-        };
+            return {
+                count,
+                max,
+                users: users.split(', ').filter(x => x !== '')
+            };
+        }
+        catch {
+            return null;
+        }
+    }
+
+    /**
+     * Botのステータスを変更する\
+     * 開発サーバー起動時はログイン中の人数を表示します
+     */
+    private async setBotStatus() {
+        const loginUsers = await this.getLoginUsers();
+
+        if (loginUsers) {
+            const { count, max } = loginUsers;
+
+            this.discordBotClient.SetBotStatus('online', `[${count}/${max}] TSB Dev`);
+        }
+        else {
+            this.discordBotClient.SetBotStatus('dnd', '[サーバー停止] TSB Dev');
+        }
     }
 
     /**
@@ -65,6 +89,10 @@ export class TSBDevServerBot {
      */
     private async discordBotClient_onReady() {
         this.textChannel = await this.discordBotClient.GetTextChannel(this.config.Discord.chatChannel);
+
+        await this.rconClient.Launch();
+
+        await this.setBotStatus();
 
         // 開発サーバーのログ監視を開始
         this.mcLogWatcher.on('player-chat', this.mcLogWatcher_onPlayerChat.bind(this));
@@ -98,10 +126,10 @@ export class TSBDevServerBot {
      * @param name プレイヤー名
      * @param message チャットメッセージ
      */
-    private mcLogWatcher_onPlayerChat(name: string, message: string) {
+    private async mcLogWatcher_onPlayerChat(name: string, message: string) {
         if (!this.textChannel) return;
 
-        this.textChannel.send(`<${name}> ${message}`);
+        await this.textChannel.send(`<${name}> ${message}`);
     }
 
     /**
@@ -124,12 +152,14 @@ export class TSBDevServerBot {
             color = '#f09090';
         }
 
+        await this.setBotStatus();
+
         const loginUsers = await this.getLoginUsers();
         if (!loginUsers) return;
 
         const { count, max, users } = loginUsers;
 
-        this.textChannel.send({
+        await this.textChannel.send({
             embed: {
                 description: title,
                 color,
@@ -153,7 +183,7 @@ export class TSBDevServerBot {
      * サーバーログ検出時
      * @param type サーバーログタイプ
      */
-    private mcLogWatcher_onServerLog(type: ServerLogType) {
+    private async mcLogWatcher_onServerLog(type: ServerLogType) {
         if (!this.textChannel) return;
 
         let title: string | undefined;
@@ -162,13 +192,19 @@ export class TSBDevServerBot {
         if (type === 'start') {
             title = 'サーバーが起動しました';
             color = '#43b581';
+
+            await this.rconClient.Launch();
         }
         else {
             title = 'サーバーが停止しました';
             color = '#f04747';
+
+            await this.rconClient.Stop();
         }
 
-        this.textChannel.send({
+        await this.setBotStatus();
+
+        await this.textChannel.send({
             embed: {
                 title,
                 color
