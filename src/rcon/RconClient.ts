@@ -1,5 +1,5 @@
 import { Rcon } from 'rcon-client';
-import { injectable, inject } from 'tsyringe';
+import { singleton, inject } from 'tsyringe';
 
 type RconError = {
     errno: number;
@@ -9,7 +9,7 @@ type RconError = {
     port?: number;
 };
 
-@injectable<RconClient>()
+@singleton<RconClient>()
 export class RconClient {
     /**
      * 接続フラグ
