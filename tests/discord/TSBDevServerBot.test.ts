@@ -31,10 +31,23 @@ describe('TSBDevServerBot', () => {
     });
 
     test('Launch()', async () => {
+        jest.useFakeTimers();
+
         await expect(tsbDevServerBot.Launch()).resolves.toBeUndefined();
+
+        jest.clearAllTimers();
+    });
+
+    test('Destroy() topicUpdateInterval is null', async () => {
+        tsbDevServerBot['topicUpdateInterval'] = null;
+
+        await expect(tsbDevServerBot.Destroy()).resolves.toBeUndefined();
     });
 
     test('Destroy()', async () => {
+        // @ts-ignore
+        tsbDevServerBot['topicUpdateInterval'] = jest.fn();
+
         await expect(tsbDevServerBot.Destroy()).resolves.toBeUndefined();
     });
 
@@ -69,6 +82,37 @@ describe('TSBDevServerBot', () => {
         const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockRejectedValue(Error());
 
         await expect(tsbDevServerBot['getLoginUsers']()).resolves.toBeNull();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend.mock.calls[0][0]).toBe('list');
+        mockRconClientSend.mockClear();
+    });
+
+    test('topicUpdate() textChannel is null', async () => {
+        tsbDevServerBot['textChannel'] = null;
+
+        await expect(tsbDevServerBot['topicUpdate']()).resolves.toBeUndefined();
+    });
+
+    test('topicUpdate() loginUsers is null', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send').mockResolvedValue('');
+
+        tsbDevServerBot['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(tsbDevServerBot['topicUpdate']()).resolves.toBeUndefined();
+
+        expect(mockRconClientSend).toBeCalledTimes(1);
+        expect(mockRconClientSend.mock.calls[0][0]).toBe('list');
+        mockRconClientSend.mockClear();
+    });
+
+    test('topicUpdate()', async () => {
+        const mockRconClientSend = jest.spyOn(RconClient.prototype, 'Send')
+            .mockResolvedValue('There are 0 of a max of 20 players online:');
+
+        tsbDevServerBot['textChannel'] = new TextChannel(expect.anything());
+
+        await expect(tsbDevServerBot['topicUpdate']()).resolves.toBeUndefined();
 
         expect(mockRconClientSend).toBeCalledTimes(1);
         expect(mockRconClientSend.mock.calls[0][0]).toBe('list');

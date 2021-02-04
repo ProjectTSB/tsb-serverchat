@@ -12,11 +12,22 @@ type LoginUsers = {
     users: string[];
 };
 
+/**
+ * listコマンドの戻り値の正規表現
+ */
 const REGEX_LIST_COMMAND = /^There are ([^ ]*) of a max of ([^ ]*) players online: ?(.*)$/;
+
+/**
+ * チャンネルトピック更新間隔(ms)\
+ * API制限の事情で5分毎
+ */
+const TOPIC_UPDATE_MS = (1000 * 60) * 5;
 
 @singleton<TSBDevServerBot>()
 export class TSBDevServerBot {
     private textChannel: TextChannel | null = null;
+
+    private topicUpdateInterval: NodeJS.Timeout | null = null;
 
     public constructor(
         @inject(Config) private config: Config,
@@ -33,6 +44,11 @@ export class TSBDevServerBot {
         this.discordBotClient.on('chat', this.discordBotClient_onChat.bind(this));
 
         await this.discordBotClient.Launch();
+
+        this.topicUpdateInterval = setInterval(
+            this.topicUpdate.bind(this),
+            TOPIC_UPDATE_MS
+        );
     }
 
     /**
@@ -43,6 +59,10 @@ export class TSBDevServerBot {
         this.mcLogWatcher.Stop();
         await this.rconClient.Stop();
         await this.discordBotClient.Destroy();
+
+        if (this.topicUpdateInterval) {
+            clearInterval(this.topicUpdateInterval);
+        }
     }
 
     /**
@@ -81,6 +101,24 @@ export class TSBDevServerBot {
         }
         else {
             this.discordBotClient.SetBotStatus('dnd', '[サーバー停止] TSB Dev');
+        }
+    }
+
+    /**
+     * チャンネルトピック更新
+     */
+    private async topicUpdate() {
+        if (!this.textChannel) return;
+
+        const loginUsers = await this.getLoginUsers();
+
+        if (loginUsers) {
+            const { users } = loginUsers;
+
+            await this.textChannel.setTopic(`[5分毎更新] ログイン中: ${users.join(', ') || '-'}`);
+        }
+        else {
+            await this.textChannel.setTopic('[5分毎更新] サーバー停止中');
         }
     }
 
