@@ -1,3 +1,6 @@
+import { injectable, inject } from 'tsyringe';
+
+import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
 
 type SubCommand =
@@ -24,6 +27,7 @@ type SchematicInteraction<T extends SubCommand> = Interaction & {
     };
 };
 
+@injectable<CommandBase>()
 export class SchematicCommand extends CommandBase {
     protected get command(): ApplicationCommandWithoutId {
         return {
@@ -52,7 +56,20 @@ export class SchematicCommand extends CommandBase {
         };
     }
 
+    public constructor(
+        @inject(Config) private config: Config
+    ) {
+        super();
+    }
+
     protected async callback(interaction: SchematicInteraction<SubCommand>): Promise<InteractionResponse> {
+        // 指定のチャンネル以外では実行しない
+        if (interaction.channel_id !== this.config.Discord.chatChannel) {
+            return {
+                type: 2
+            };
+        }
+
         const subCommand = interaction.data.options[0].name;
 
         switch (subCommand) {

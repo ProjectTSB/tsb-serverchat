@@ -1,5 +1,6 @@
 import { injectable, inject } from 'tsyringe';
 
+import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
 import { RconClient } from '@/rcon/RconClient';
 
@@ -32,12 +33,20 @@ export class CmdCommand extends CommandBase {
     }
 
     public constructor(
+        @inject(Config) private config: Config,
         @inject(RconClient) private rconClient: RconClient
     ) {
         super();
     }
 
     protected async callback(interaction: CmdInteraction): Promise<InteractionResponse> {
+        // 指定のチャンネル以外では実行しない
+        if (interaction.channel_id !== this.config.Discord.chatChannel) {
+            return {
+                type: 2
+            };
+        }
+
         const mcCommand = interaction.data.options[0].value;
 
         try {
