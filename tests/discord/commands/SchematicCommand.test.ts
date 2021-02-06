@@ -1,9 +1,16 @@
 import 'reflect-metadata';
 
+import { TextChannel } from 'discord.js';
 import { container } from 'tsyringe';
+import https from 'https';
+import { IncomingMessage } from 'http';
+import fs from 'fs';
 
 import { Config } from '@/Config';
 import { SchematicCommand } from '@/discord/commands/SchematicCommand';
+
+jest.mock('https');
+jest.mock('discord.js');
 
 jest.mock('@/discord/util/requireContext', () => ({
     requireContext: jest.fn()
@@ -13,6 +20,12 @@ Object.defineProperty(Config.prototype, 'Discord', {
     get: jest.fn<ConfigData['discord'], any[]>(() => ({
         token: 'DISCORD_TOKEN',
         chatChannel: 'DISCORD_CHAT_CHANNEL'
+    }))
+});
+
+Object.defineProperty(Config.prototype, 'Minecraft', {
+    get: jest.fn<ConfigData['minecraft'], any[]>(() => ({
+        serverPath: 'MINECRAFT_SERVER_PATH'
     }))
 });
 
@@ -166,5 +179,34 @@ describe('SchematicCommand', () => {
             type: 4,
             data: expect.anything()
         });
+    });
+
+    test('discordBotClient_onSchematic(channel, fileName, url)', async () => {
+        const channel = new TextChannel(expect.anything());
+        const writeStream = fs.WriteStream.prototype;
+        // @ts-ignore
+        const mockHttpsGet = jest.spyOn(https, 'get').mockImplementation((url: string, callback: (res: IncomingMessage) => void) => {
+            const res = new IncomingMessage(expect.anything());
+            callback(res);
+
+            return {} as any;
+        });
+        const mockFsCreateWriteStream = jest.spyOn(fs, 'createWriteStream').mockReturnValue(writeStream);
+        const mockFsWriteStreamOn = jest.spyOn(fs.WriteStream.prototype, 'on')
+            .mockImplementation((event: string | symbol, listener: () => void) => {
+                listener();
+                return writeStream;
+            });
+
+        const command = container.resolve(SchematicCommand);
+
+        await expect(command['discordBotClient_onSchematic'](channel, 'FILE_NAME', 'URL')).resolves.toBeUndefined();
+
+        expect(mockHttpsGet).toBeCalledTimes(1);
+        expect(mockFsCreateWriteStream).toBeCalledTimes(1);
+
+        mockHttpsGet.mockClear();
+        mockFsCreateWriteStream.mockClear();
+        mockFsWriteStreamOn.mockClear();
     });
 });

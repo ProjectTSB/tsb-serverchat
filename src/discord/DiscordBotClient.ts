@@ -14,6 +14,11 @@ type EventArgs = {
     'chat': [
         message: Message
     ];
+    'schematic': [
+        channel: TextChannel,
+        fileName: string,
+        url: string
+    ];
 };
 
 @singleton<DiscordBotClient>()
@@ -177,11 +182,26 @@ export class DiscordBotClient extends EventEmitter {
      * @param message
      */
     private async client_onMessage(message: Message) {
+        if (!(message.channel instanceof TextChannel)) return;
         if (message.author.bot) return;
         if (message.system) return;
         if (message.channel.id !== this.config.Discord.chatChannel) return;
 
-        this.emit('chat', message);
+        if (message.attachments.size > 0) {
+            for (const attachment of message.attachments.array()) {
+                const { name, url } = attachment;
+
+                if (!name) continue;
+
+                if (/^.*\.(?:schematic|schem)$/.test(name)) {
+                    this.emit('schematic', message.channel, name, url);
+                }
+            }
+        }
+
+        if (message.content !== '') {
+            this.emit('chat', message);
+        }
     }
 
     /**

@@ -1,7 +1,12 @@
 import { injectable, inject } from 'tsyringe';
+import { createWriteStream } from 'fs';
+import { TextChannel } from 'discord.js';
+import https from 'https';
+import path from 'path';
 
 import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
+import { DiscordBotClient } from '@/discord/DiscordBotClient';
 
 type SubCommand =
     | 'list'
@@ -57,9 +62,12 @@ export class SchematicCommand extends CommandBase {
     }
 
     public constructor(
-        @inject(Config) private config: Config
+        @inject(Config) private config: Config,
+        @inject(DiscordBotClient) private discordBotClient: DiscordBotClient
     ) {
         super();
+
+        this.discordBotClient.on('schematic', this.discordBotClient_onSchematic.bind(this));
     }
 
     protected async callback(interaction: SchematicInteraction<SubCommand>): Promise<InteractionResponse> {
@@ -110,5 +118,29 @@ export class SchematicCommand extends CommandBase {
                 ].join('\n')
             }
         };
+    }
+
+    /**
+     * Schematicファイル送信時
+     * @param channel ファイルが貼られたチャンネル
+     * @param fileName ファイル名
+     * @param url ファイルのリンク
+     */
+    private async discordBotClient_onSchematic(channel: TextChannel, fileName: string, url: string) {
+        https.get(url, res => {
+            const schemPath = path.join(this.config.Minecraft.serverPath, 'schematics', fileName);
+            const stream = createWriteStream(schemPath);
+
+            stream.on('finish', () => {
+                channel.send({
+                    embed: {
+                        title: `${fileName} をアップロードしました`,
+                        description: `//schematic load ${fileName}`
+                    }
+                });
+            });
+
+            res.pipe(stream);
+        });
     }
 }

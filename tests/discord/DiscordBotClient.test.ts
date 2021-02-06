@@ -213,9 +213,22 @@ describe('DiscordBotClient', () => {
         });
     });
 
+    test('client_onMessage(message) wrong channel type', async () => {
+        const channel = jest.fn();
+        // @ts-ignore
+        const message = new Message(client, {}, channel);
+        // @ts-ignore
+        message.author = {
+            bot: true
+        };
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+    });
+
     test('client_onMessage(message) is Bot', async () => {
         const channel = new TextChannel(expect.anything());
         const message = new Message(client, {}, channel);
+        message.channel = channel;
         // @ts-ignore
         message.author = {
             bot: true
@@ -227,6 +240,7 @@ describe('DiscordBotClient', () => {
     test('client_onMessage(message) is System', async () => {
         const channel = new TextChannel(expect.anything());
         const message = new Message(client, {}, channel);
+        message.channel = channel;
         // @ts-ignore
         message.author = {
             bot: false
@@ -239,14 +253,52 @@ describe('DiscordBotClient', () => {
     test('client_onMessage(message) wrong chatChannel', async () => {
         const channel = new TextChannel(expect.anything());
         const message = new Message(client, {}, channel);
+        message.channel = channel;
         // @ts-ignore
         message.author = {
             bot: false
         };
         message.system = false;
+        message.channel.id = 'WRONG_CHAT_CHANNEL';
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+    });
+
+    test('client_onMessage(message) zero attachments and empty content', async () => {
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        message.channel = channel;
         // @ts-ignore
-        message.channel = {
-            id: 'WRONG_CHAT_CHANNEL'
+        message.author = {
+            bot: false,
+            username: 'USERNAME'
+        };
+        message.system = false;
+        message.channel.id = 'DISCORD_CHAT_CHANNEL';
+        message.content = '';
+        // @ts-ignore
+        message.attachments = {
+            size: 0
+        };
+
+        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
+    });
+
+    test('client_onMessage(message) zero attachments', async () => {
+        const channel = new TextChannel(expect.anything());
+        const message = new Message(client, {}, channel);
+        message.channel = channel;
+        // @ts-ignore
+        message.author = {
+            bot: false,
+            username: 'USERNAME'
+        };
+        message.system = false;
+        message.channel.id = 'DISCORD_CHAT_CHANNEL';
+        message.content = 'CONTENT';
+        // @ts-ignore
+        message.attachments = {
+            size: 0
         };
 
         await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
@@ -255,35 +307,33 @@ describe('DiscordBotClient', () => {
     test('client_onMessage(message)', async () => {
         const channel = new TextChannel(expect.anything());
         const message = new Message(client, {}, channel);
+        message.channel = channel;
         // @ts-ignore
         message.author = {
             bot: false,
             username: 'USERNAME'
         };
         message.system = false;
-        // @ts-ignore
-        message.channel = {
-            id: 'DISCORD_CHAT_CHANNEL'
-        };
+        message.channel.id = 'DISCORD_CHAT_CHANNEL';
         message.content = 'CONTENT';
-
-        await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
-    });
-
-    test('client_onMessage(message) Error', async () => {
-        const channel = new TextChannel(expect.anything());
-        const message = new Message(client, {}, channel);
         // @ts-ignore
-        message.author = {
-            bot: false,
-            username: 'USERNAME'
+        message.attachments = {
+            size: 1,
+            array: jest.fn().mockReturnValue([
+                {
+                    name: null,
+                    url: 'https://example.com'
+                },
+                {
+                    name: 'hoge.txt',
+                    url: 'https://example.com'
+                },
+                {
+                    name: 'hoge.schematic',
+                    url: 'https://example.com'
+                }
+            ])
         };
-        message.system = false;
-        // @ts-ignore
-        message.channel = {
-            id: 'DISCORD_CHAT_CHANNEL'
-        };
-        message.content = 'CONTENT';
 
         await expect(discordBotClient['client_onMessage'](message)).resolves.toBeUndefined();
     });
