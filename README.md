@@ -22,7 +22,7 @@ TSB開発サーバーとTSB Discordのチャットを連携するプログラム
 - [x] Discordチャンネルに貼り付けられたSchematicファイルをTSB開発サーバーにアップロードする機能
 - [x] `/cmd` コマンド
 - [x] `/schematic` コマンド
-- [ ] `/teleportpoint` コマンド
+- [x] `/teleportpoint` コマンド
 
 ## Discordコマンド
 
