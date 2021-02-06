@@ -25,7 +25,8 @@ Object.defineProperty(Config.prototype, 'Discord', {
 
 Object.defineProperty(Config.prototype, 'Minecraft', {
     get: jest.fn<ConfigData['minecraft'], any[]>(() => ({
-        serverPath: 'MINECRAFT_SERVER_PATH'
+        serverPath: 'MINECRAFT_SERVER_PATH',
+        teleportpointsMcfunction: 'MINECRAFT_TELEPORTPOINTS_MCFUNCTION'
     }))
 });
 

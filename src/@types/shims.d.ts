@@ -28,6 +28,10 @@ type ConfigData = {
          * TSB開発サーバーディレクトリのパス
          */
         serverPath: string;
+        /**
+         * teleportpointコマンドの出力先(mcfunction)
+         */
+        teleportpointsMcfunction: string;
     };
 };
 

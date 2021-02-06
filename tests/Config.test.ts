@@ -16,7 +16,8 @@ const confFileData = `
             "password": "RCON_PASSWORD"
         },
         "minecraft": {
-            "serverPath": "MINECRAFT_SERVER_PATH"
+            "serverPath": "MINECRAFT_SERVER_PATH",
+            "teleportpointsMcfunction": "MINECRAFT_TELEPORTPOINTS_MCFUNCTION"
         }
     }
 `;
@@ -55,7 +56,8 @@ describe('Config', () => {
         const config = new Config();
 
         expect(config.Minecraft).toEqual<ConfigData['minecraft']>({
-            serverPath: 'MINECRAFT_SERVER_PATH'
+            serverPath: 'MINECRAFT_SERVER_PATH',
+            teleportpointsMcfunction: 'MINECRAFT_TELEPORTPOINTS_MCFUNCTION'
         });
     });
 
