@@ -19,7 +19,7 @@ TSB開発サーバーとTSB Discordのチャットを連携するプログラム
 - [x] TSB開発サーバーへのログイン、ログアウトをDiscordに通知
 - [x] Discord Botのステータスにサーバーの状態、ログイン人数をリアルタイム表示
 - [x] Discordチャンネルの説明欄にTSB開発サーバーのログイン中プレイヤーを表示
-- [ ] Discordチャンネルに貼り付けられたSchematicファイルをTSB開発サーバーにアップロードする機能
+- [x] Discordチャンネルに貼り付けられたSchematicファイルをTSB開発サーバーにアップロードする機能
 - [x] `/cmd` コマンド
 - [ ] `/schematic` コマンド
 - [ ] `/teleportpoint` コマンド
