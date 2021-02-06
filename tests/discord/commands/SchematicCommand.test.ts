@@ -86,7 +86,22 @@ describe('SchematicCommand', () => {
         });
     });
 
-    test('callback(interaction) list', async () => {
+    test('callback(interaction) list, zero schematic files', async () => {
+        const mockFsReaddirSync = jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+            const dummyDir = new fs.Dirent();
+            dummyDir.isFile = jest.fn().mockReturnValue(false);
+            dummyDir.name = 'DIRECTORY';
+
+            const dummyNoSchemFile = new fs.Dirent();
+            dummyNoSchemFile.isFile = jest.fn().mockReturnValue(true);
+            dummyNoSchemFile.name = 'NO_SCHEM.txt';
+
+            return [
+                dummyDir,
+                dummyNoSchemFile
+            ];
+        });
+
         const command = container.resolve(SchematicCommand);
 
         const interaction: Interaction = {
@@ -112,6 +127,88 @@ describe('SchematicCommand', () => {
             type: 4,
             data: expect.anything()
         });
+
+        expect(mockFsReaddirSync).toBeCalledTimes(1);
+
+        mockFsReaddirSync.mockClear();
+    });
+
+    test('callback(interaction) list', async () => {
+        const mockFsReaddirSync = jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+            const dummySchemFile = new fs.Dirent();
+            dummySchemFile.isFile = jest.fn().mockReturnValue(true);
+            dummySchemFile.name = 'SCHEM.schematic';
+
+            return [
+                dummySchemFile
+            ];
+        });
+
+        const command = container.resolve(SchematicCommand);
+
+        const interaction: Interaction = {
+            id: 'ID',
+            type: 1,
+            data: {
+                id: 'ID',
+                name: 'schematic',
+                options: [
+                    {
+                        name: 'list'
+                    }
+                ]
+            },
+            guild_id: 'GUILD_ID',
+            channel_id: 'DISCORD_CHAT_CHANNEL',
+            member: jest.fn() as any,
+            token: 'TOKEN',
+            version: 0
+        };
+
+        await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
+            type: 4,
+            data: expect.anything()
+        });
+
+        expect(mockFsReaddirSync).toBeCalledTimes(1);
+
+        mockFsReaddirSync.mockClear();
+    });
+
+    test('callback(interaction) list, error', async () => {
+        const mockFsReaddirSync = jest.spyOn(fs, 'readdirSync').mockImplementation(() => {
+            throw Error();
+        });
+
+        const command = container.resolve(SchematicCommand);
+
+        const interaction: Interaction = {
+            id: 'ID',
+            type: 1,
+            data: {
+                id: 'ID',
+                name: 'schematic',
+                options: [
+                    {
+                        name: 'list'
+                    }
+                ]
+            },
+            guild_id: 'GUILD_ID',
+            channel_id: 'DISCORD_CHAT_CHANNEL',
+            member: jest.fn() as any,
+            token: 'TOKEN',
+            version: 0
+        };
+
+        await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
+            type: 4,
+            data: expect.anything()
+        });
+
+        expect(mockFsReaddirSync).toBeCalledTimes(1);
+
+        mockFsReaddirSync.mockClear();
     });
 
     test('callback(interaction) delete, wrong chatChannel', async () => {
@@ -148,6 +245,8 @@ describe('SchematicCommand', () => {
     });
 
     test('callback(interaction) delete', async () => {
+        const mockFsUnlinkSync = jest.spyOn(fs, 'unlinkSync').mockReturnValue();
+
         const command = container.resolve(SchematicCommand);
 
         const interaction: Interaction = {
@@ -179,6 +278,52 @@ describe('SchematicCommand', () => {
             type: 4,
             data: expect.anything()
         });
+
+        expect(mockFsUnlinkSync).toBeCalledTimes(1);
+
+        mockFsUnlinkSync.mockClear();
+    });
+
+    test('callback(interaction) delete, error', async () => {
+        const mockFsUnlinkSync = jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {
+            throw Error();
+        });
+
+        const command = container.resolve(SchematicCommand);
+
+        const interaction: Interaction = {
+            id: 'ID',
+            type: 1,
+            data: {
+                id: 'ID',
+                name: 'schematic',
+                options: [
+                    {
+                        name: 'delete',
+                        options: [
+                            {
+                                name: 'file_name',
+                                value: 'VALUE'
+                            }
+                        ]
+                    }
+                ]
+            },
+            guild_id: 'GUILD_ID',
+            channel_id: 'DISCORD_CHAT_CHANNEL',
+            member: jest.fn() as any,
+            token: 'TOKEN',
+            version: 0
+        };
+
+        await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
+            type: 4,
+            data: expect.anything()
+        });
+
+        expect(mockFsUnlinkSync).toBeCalledTimes(1);
+
+        mockFsUnlinkSync.mockClear();
     });
 
     test('discordBotClient_onSchematic(channel, fileName, url)', async () => {

@@ -1,5 +1,5 @@
 import { injectable, inject } from 'tsyringe';
-import { createWriteStream } from 'fs';
+import { createWriteStream, readdirSync, unlinkSync } from 'fs';
 import { TextChannel } from 'discord.js';
 import https from 'https';
 import path from 'path';
@@ -90,14 +90,41 @@ export class SchematicCommand extends CommandBase {
      * /schematic list
      */
     private async subCommand_list(): Promise<InteractionResponse> {
-        // TODO: schematic listコマンド処理の実装
+        try {
+            const schemPath = path.join(this.config.Minecraft.serverPath, 'schematics');
+            const files = readdirSync(schemPath, { withFileTypes: true })
+                .filter(x => x.isFile())
+                .map(x => x.name)
+                .filter(x => /^.*\.(?:schematic|schem)$/.test(x));
 
-        return {
-            type: 4,
-            data: {
-                content: '[WIP] /schematic list'
-            }
-        };
+            return {
+                type: 4,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'Schematicファイル一覧',
+                            description: files.join('\n') || '-'
+                        }
+                    ]
+                }
+            };
+        }
+        catch (err) {
+            console.log('[SchematicCommand]:', err.message);
+
+            return {
+                type: 4,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'コマンド実行中にエラーが発生しました'
+                        }
+                    ]
+                }
+            };
+        }
     }
 
     /**
@@ -107,17 +134,38 @@ export class SchematicCommand extends CommandBase {
     private async subCommand_delete(interaction: SchematicInteraction<'delete'>): Promise<InteractionResponse> {
         const filename = interaction.data.options[0].options[0].value;
 
-        // TODO: schematic deleteコマンド処理の実装
+        try {
+            const filePath = path.join(this.config.Minecraft.serverPath, 'schematics', filename);
+            unlinkSync(filePath);
 
-        return {
-            type: 4,
-            data: {
-                content: [
-                    '[WIP] schematic delete',
-                    `file_name: ${filename}`
-                ].join('\n')
-            }
-        };
+            return {
+                type: 4,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'ファイルを削除しました',
+                            description: filename
+                        }
+                    ]
+                }
+            };
+        }
+        catch (err) {
+            console.log('[SchematicCommand]:', err.message);
+
+            return {
+                type: 4,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'コマンド実行中にエラーが発生しました'
+                        }
+                    ]
+                }
+            };
+        }
     }
 
     /**
