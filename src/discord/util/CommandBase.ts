@@ -25,6 +25,11 @@ export abstract class CommandBase {
     protected abstract callback(interaction: Required<Interaction>): Promise<InteractionResponse>;
 
     /**
+     * コマンド定義のリスト
+     */
+    protected static commandDifinitions: ApplicationCommandWithoutId[] = [];
+
+    /**
      * 全コマンドを登録する
      * @static
      */
@@ -37,6 +42,7 @@ export abstract class CommandBase {
             const command = container.resolve(module[className]);
 
             console.log(`[Discord]: ${command.command.name} コマンドを設定しました`);
+            this.commandDifinitions.push(command.command);
 
             return discordBotClient.RegisterCommand(command.command, command.callback.bind(command));
         }));
