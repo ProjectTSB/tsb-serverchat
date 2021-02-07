@@ -80,7 +80,7 @@ Schematicファイルを削除します
 
 [License_Badge]: https://img.shields.io/github/license/TheSkyBlock/tsb-serverchat
 [CI_Badge]: https://img.shields.io/github/workflow/status/TheSkyBlock/tsb-serverchat/CI/next?logo=github&label=CI
-[Version_Badge]: https://img.shields.io/github/package-json/v/TheSkyBlock/tsb-serverchat/next
+[Version_Badge]: https://img.shields.io/github/package-json/v/TheSkyBlock/tsb-serverchat
 
 [License]:./LICENSE
 [CI]: https://github.com/TheSkyBlock/tsb-serverchat/actions?query=workflow%3ACI
