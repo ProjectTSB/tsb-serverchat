@@ -1,0 +1,22 @@
+{
+    "discord": {
+        // Botのトークン
+        "token": "",
+        // チャットに使用するチャンネルのID
+        "chatChannel": ""
+    },
+    "rcon": {
+        // TSB開発サーバーのホストネーム
+        "host": "localhost",
+        // TSB開発サーバーのRconポート
+        "port": 25575,
+        // TSB開発サーバーのRconパスワード
+        "password": ""
+    },
+    "minecraft": {
+        // TSB開発サーバーディレクトリのパス
+        "serverPath": "",
+        // teleportpointコマンドの出力先(mcfunction)
+        "teleportpointsMcfunction": ""
+    }
+}
