@@ -199,7 +199,7 @@ export class TSBDevServerBot {
 
         await this.textChannel.send({
             embed: {
-                description: title,
+                title,
                 color,
                 fields: [
                     {
