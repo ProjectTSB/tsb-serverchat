@@ -74,7 +74,7 @@ Schematicファイルを削除します
 
 ## ライセンス
 
-[MIT](License)
+[MIT][License]
 
 <!-- リンク -->
 
