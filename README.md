@@ -79,11 +79,11 @@ Schematicファイルを削除します
 <!-- リンク -->
 
 [License_Badge]: https://img.shields.io/github/license/TheSkyBlock/tsb-serverchat
-[CI_Badge]: https://img.shields.io/github/workflow/status/TheSkyBlock/tsb-serverchat/CI/next?logo=github&label=CI
+[CI_Badge]: https://img.shields.io/github/workflow/status/TheSkyBlock/tsb-serverchat/CI?logo=github&label=CI
 [Version_Badge]: https://img.shields.io/github/package-json/v/TheSkyBlock/tsb-serverchat
 
 [License]:./LICENSE
-[CI]: https://github.com/TheSkyBlock/tsb-serverchat/actions?query=workflow%3ACI
+[CI]: https://github.com/TheSkyBlock/tsb-serverchat/actions/workflows/ci.yml
 
 [Visual Studio Code]:https://code.visualstudio.com/
 [Node.js]:https://nodejs.org/ja/
