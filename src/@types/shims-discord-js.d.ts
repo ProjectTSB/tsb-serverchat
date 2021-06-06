@@ -6,12 +6,21 @@ type InteractionResponsePost = {
     data: InteractionResponse;
 };
 
+type ApplicationCommandPermissionsPut = {
+    data: {
+        permissions: ApplicationCommandPermissions[];
+    }
+};
+
 type Api = {
     applications(id: string): {
         guilds(id: string): {
             commands: {
                 (commandId: string): {
                     delete: () => Promise<Buffer>;
+                    permissions: {
+                        put(data: ApplicationCommandPermissionsPut): Promise<GuildApplicationCommandPermissions>;
+                    }
                 };
                 get(): Promise<ApplicationCommand[]>;
                 post(opt: ApplicationCommandPost): Promise<ApplicationCommand>;

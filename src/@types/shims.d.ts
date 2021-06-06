@@ -8,6 +8,10 @@ type ConfigData = {
          * チャットに使用するチャンネルのID
          */
         chatChannel: string;
+        /**
+         * コマンドの使用を許可するロールのID
+         */
+        allowCommandRole: string;
     };
     rcon: {
         /**
