@@ -3,7 +3,9 @@
         // Botのトークン
         "token": "",
         // チャットに使用するチャンネルのID
-        "chatChannel": ""
+        "chatChannel": "",
+        // コマンドの使用を許可するロールのID
+        "allowCommandRole": ""
     },
     "rcon": {
         // TSB開発サーバーのホストネーム
