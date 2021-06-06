@@ -167,7 +167,7 @@ type Interaction = {
      * the type of interaction
      * @type InteractionType
      */
-    type: Integer;
+    type: import('@/discord/util/discord-api-enums').InteractionType;
     /**
      * the command data payload
      *
@@ -307,7 +307,7 @@ type ApplicationCommandInteractionDataOption = {
      * value of [ApplicationCommandOptionType](https://discord.com/developers/docs/interactions/slash-commands#applicationcommandoptiontype)
      * @type int
      */
-    type: number;
+    type: import('@/discord/util/discord-api-enums').ApplicationCommandOptionType;
     /**
      * the value of the pair
      * @type OptionType
@@ -374,7 +374,7 @@ type InteractionApplicationCommandCallbackData = {
      * set to `64` to make your response ephemeral
      * @type int
      */
-    flags?: number;
+    flags?: Integer;
     /**
      * message components
      * @type array of components
