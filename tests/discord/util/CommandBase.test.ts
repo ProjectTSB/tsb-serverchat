@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import { CommandBase } from '@/discord/util/CommandBase';
+import { InteractionCallbackType } from '@/discord/util/discord-api-enums';
 
 jest.mock('discord.js');
 jest.mock('@/discord/DiscordBotClient');
@@ -15,7 +16,18 @@ jest.mock('@/discord/util/requireContext', () => ({
                 }
                 callback(): InteractionResponse {
                     return {
-                        type: 2
+                        type: InteractionCallbackType.ChannelMessageWithSource,
+                        data: {
+                            content: '',
+                            flags: 64,
+                            embeds: [
+                                {
+                                    title: expect.anything(),
+                                    description: expect.anything(),
+                                    color: 0xff0000
+                                }
+                            ]
+                        }
                     };
                 }
             }

@@ -18,7 +18,8 @@ const { ClientUser } = jest.requireActual<typeof Discord>('discord.js');
 Object.defineProperty(Config.prototype, 'Discord', {
     get: jest.fn<ConfigData['discord'], any[]>(() => ({
         token: 'DISCORD_TOKEN',
-        chatChannel: 'DISCORD_CHAT_CHANNEL'
+        chatChannel: 'DISCORD_CHAT_CHANNEL',
+        allowCommandRole: 'ALLOW_COMMAND_ROLE'
     }))
 });
 
@@ -28,7 +29,10 @@ Object.defineProperty(Client.prototype, 'api', {
             guilds: () => ({
                 commands: Object.assign(
                     () => ({
-                        delete: () => Promise.resolve(Buffer.from([]))
+                        delete: () => Promise.resolve(Buffer.from([])),
+                        permissions: {
+                            put: () => Promise.resolve<any>([])
+                        }
                     }),
                     {
                         get: () => Promise.resolve<ApplicationCommand[]>([
@@ -160,10 +164,11 @@ describe('DiscordBotClient', () => {
             name: 'NAME',
             description: 'DESCRIPTION'
         };
+        const dummyPermissions: ApplicationCommandPermissions[] = [];
 
         const dummyCallback = jest.fn();
 
-        await expect(discordBotClient.RegisterCommand(dummyOpt, dummyCallback)).resolves.toBeUndefined();
+        await expect(discordBotClient.RegisterCommand(dummyOpt, dummyPermissions, dummyCallback)).resolves.toBeUndefined();
     });
 
     test('on(event, listener)', () => {
@@ -344,16 +349,21 @@ describe('DiscordBotClient', () => {
 
         const dummyInteraction: Required<Interaction> = {
             id: 'ID',
+            application_id: 'APPLICATION_ID',
             type: 1,
             data: {
                 id: 'ID',
-                name: 'NAME'
+                name: 'NAME',
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'CHANNEL_ID',
-            member: jest.fn() as unknown as Discord.GuildMember,
+            member: jest.fn() as unknown as GuildMember,
+            user: jest.fn() as any,
             token: 'TOKEN',
-            version: 0
+            version: 0,
+            message: jest.fn() as any
         };
 
         await expect(discordBotClient['clientWs_onInteractionCreate'](dummyInteraction)).resolves.toBeUndefined();

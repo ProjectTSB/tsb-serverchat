@@ -5,6 +5,7 @@ import fs from 'fs';
 
 import { Config } from '@/Config';
 import { TeleportPointCommand } from '@/discord/commands/TeleportPointCommand';
+import { ApplicationCommandOptionType, ApplicationCommandPermissionType, InteractionCallbackType, InteractionType } from '@/discord/util/discord-api-enums';
 
 jest.mock('@/rcon/RconClient');
 jest.mock('@/discord/util/requireContext', () => ({
@@ -14,7 +15,8 @@ jest.mock('@/discord/util/requireContext', () => ({
 Object.defineProperty(Config.prototype, 'Discord', {
     get: jest.fn<ConfigData['discord'], any[]>(() => ({
         token: 'DISCORD_TOKEN',
-        chatChannel: 'DISCORD_CHAT_CHANNEL'
+        chatChannel: 'DISCORD_CHAT_CHANNEL',
+        allowCommandRole: 'ALLOW_COMMAND_ROLE'
     }))
 });
 
@@ -70,21 +72,22 @@ describe('TeleportPointCommand', () => {
         expect(command['command']).toEqual<ApplicationCommandWithoutId>({
             name: 'teleportpoint',
             description: expect.anything(),
+            default_permission: false,
             options: [
                 {
                     name: 'list',
                     description: expect.anything(),
-                    type: 1
+                    type: ApplicationCommandOptionType.SUB_COMMAND
                 },
                 {
                     name: 'add',
                     description: expect.anything(),
-                    type: 1,
+                    type: ApplicationCommandOptionType.SUB_COMMAND,
                     options: [
                         {
                             name: 'dimension',
                             description: expect.anything(),
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true,
                             choices: [
                                 {
@@ -104,25 +107,25 @@ describe('TeleportPointCommand', () => {
                         {
                             name: 'name',
                             description: expect.anything(),
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true
                         },
                         {
                             name: 'x',
                             description: expect.anything(),
-                            type: 4,
+                            type: ApplicationCommandOptionType.INTEGER,
                             required: true
                         },
                         {
                             name: 'y',
                             description: expect.anything(),
-                            type: 4,
+                            type: ApplicationCommandOptionType.INTEGER,
                             required: true
                         },
                         {
                             name: 'z',
                             description: expect.anything(),
-                            type: 4,
+                            type: ApplicationCommandOptionType.INTEGER,
                             required: true
                         }
                     ]
@@ -130,12 +133,12 @@ describe('TeleportPointCommand', () => {
                 {
                     name: 'remove',
                     description: expect.anything(),
-                    type: 1,
+                    type: ApplicationCommandOptionType.SUB_COMMAND,
                     options: [
                         {
                             name: 'dimension',
                             description: expect.anything(),
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true,
                             choices: [
                                 {
@@ -155,7 +158,7 @@ describe('TeleportPointCommand', () => {
                         {
                             name: 'name',
                             description: expect.anything(),
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true
                         }
                     ]
@@ -164,20 +167,36 @@ describe('TeleportPointCommand', () => {
         });
     });
 
+    test('permissions', () => {
+        const command = container.resolve(TeleportPointCommand);
+
+        expect(command['permissions']).toEqual<ApplicationCommandPermissions[]>([
+            {
+                id: expect.anything(),
+                type: ApplicationCommandPermissionType.ROLE,
+                permission: true
+            }
+        ]);
+    });
+
     test('callback(interaction) list, wrong chatChannel', async () => {
         const command = container.resolve(TeleportPointCommand);
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'list'
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'WRONG_CHANNEL_ID',
@@ -187,7 +206,18 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 2
+            type: InteractionCallbackType.ChannelMessageWithSource,
+            data: {
+                content: '',
+                flags: 64,
+                embeds: [
+                    {
+                        title: expect.anything(),
+                        description: expect.anything(),
+                        color: 0xff0000
+                    }
+                ]
+            }
         });
     });
 
@@ -196,15 +226,19 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'list'
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -214,7 +248,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -231,15 +265,19 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'list'
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -249,7 +287,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -259,37 +297,46 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'add',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:overworld'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'NAME'
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'x',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'y',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'z',
                                 value: 0
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'WRONG_CHANNEL_ID',
@@ -299,7 +346,18 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 2
+            type: InteractionCallbackType.ChannelMessageWithSource,
+            data: {
+                content: '',
+                flags: 64,
+                embeds: [
+                    {
+                        title: expect.anything(),
+                        description: expect.anything(),
+                        color: 0xff0000
+                    }
+                ]
+            }
         });
     });
 
@@ -310,37 +368,46 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'add',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:overworld'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'NAME'
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'x',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'y',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'z',
                                 value: 0
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -350,7 +417,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -362,37 +429,46 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'add',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:overworld'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'NAME'
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'x',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'y',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'z',
                                 value: 0
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -402,7 +478,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -414,37 +490,46 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'add',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:the_nether'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'THE_NETHER1'
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'x',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'y',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'z',
                                 value: 0
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -454,7 +539,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -470,37 +555,46 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'add',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:overworld'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'NAME'
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'x',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'y',
                                 value: 0
                             },
                             {
+                                type: ApplicationCommandOptionType.INTEGER,
                                 name: 'z',
                                 value: 0
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -510,7 +604,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -520,25 +614,31 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'remove',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:overworld'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'NAME'
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'WRONG_CHANNEL_ID',
@@ -548,7 +648,18 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 2
+            type: InteractionCallbackType.ChannelMessageWithSource,
+            data: {
+                content: '',
+                flags: 64,
+                embeds: [
+                    {
+                        title: expect.anything(),
+                        description: expect.anything(),
+                        color: 0xff0000
+                    }
+                ]
+            }
         });
     });
 
@@ -559,25 +670,31 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'remove',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:overworld'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'NAME'
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -587,7 +704,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -599,25 +716,31 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'remove',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:the_nether'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'THE_NETHER1'
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -627,7 +750,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });
@@ -643,25 +766,31 @@ describe('TeleportPointCommand', () => {
 
         const interaction: Interaction = {
             id: 'ID',
-            type: 1,
+            application_id: 'APPLICATION_ID',
+            type: InteractionType.Ping,
             data: {
                 id: 'ID',
                 name: 'teleportpoint',
                 options: [
                     {
+                        type: ApplicationCommandOptionType.SUB_COMMAND,
                         name: 'remove',
                         options: [
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'dimension',
                                 value: 'minecraft:the_nether'
                             },
                             {
+                                type: ApplicationCommandOptionType.STRING,
                                 name: 'name',
                                 value: 'THE_NETHER1'
                             }
                         ]
                     }
-                ]
+                ],
+                custom_id: 'CUSTOM_ID',
+                component_type: 1
             },
             guild_id: 'GUILD_ID',
             channel_id: 'DISCORD_CHAT_CHANNEL',
@@ -671,7 +800,7 @@ describe('TeleportPointCommand', () => {
         };
 
         await expect(command['callback'](interaction as any)).resolves.toEqual<InteractionResponse>({
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: expect.anything()
         });
     });

@@ -19,7 +19,8 @@ jest.mock('@/discord/util/requireContext', () => ({
 Object.defineProperty(Config.prototype, 'Discord', {
     get: jest.fn<ConfigData['discord'], any[]>(() => ({
         token: 'DISCORD_TOKEN',
-        chatChannel: 'DISCORD_CHAT_CHANNEL'
+        chatChannel: 'DISCORD_CHAT_CHANNEL',
+        allowCommandRole: 'ALLOW_COMMAND_ROLE'
     }))
 });
 

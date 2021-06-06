@@ -8,7 +8,8 @@ const confFileData = `
     {
         "discord": {
             "token": "DISCORD_TOKEN",
-            "chatChannel": "DISCORD_CHAT_CHANNEL"
+            "chatChannel": "DISCORD_CHAT_CHANNEL",
+            "allowCommandRole": "ALLOW_COMMAND_ROLE"
         },
         "rcon": {
             "host": "RCON_HOST",
@@ -38,7 +39,8 @@ describe('Config', () => {
 
         expect(config.Discord).toEqual<ConfigData['discord']>({
             token: 'DISCORD_TOKEN',
-            chatChannel: 'DISCORD_CHAT_CHANNEL'
+            chatChannel: 'DISCORD_CHAT_CHANNEL',
+            allowCommandRole: 'ALLOW_COMMAND_ROLE'
         });
     });
 
