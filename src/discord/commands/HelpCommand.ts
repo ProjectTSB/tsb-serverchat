@@ -32,12 +32,7 @@ export class HelpCommand extends CommandBase {
         super();
     }
 
-    protected async callback(interaction: Required<Interaction>): Promise<InteractionResponse> {
-        // 指定のチャンネル以外ではエラーを返す
-        if (interaction.channel_id !== this.config.Discord.chatChannel) {
-            return this.invalidChannel(this.config.Discord.chatChannel);
-        }
-
+    protected async callback(): Promise<InteractionResponse> {
         const futures = [
             'Discord <-> 開発サーバーのチャットを連携します',
             '開発サーバーの起動、停止、プレイヤーのログイン、ログアウトをDiscordに通知します',
