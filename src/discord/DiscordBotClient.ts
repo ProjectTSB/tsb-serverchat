@@ -91,8 +91,8 @@ export class DiscordBotClient extends EventEmitter {
      * @param opt コマンド定義
      * @param callback コマンドに対する応答
      */
-    public async RegisterCommand(opt: ApplicationCommandWithoutId, callback: CommandResponces[number]): Promise<void> {
-        const command = await this.registerCommand(opt);
+    public async RegisterCommand(opt: ApplicationCommandWithoutId, permissions: ApplicationCommandPermissions[], callback: CommandResponces[number]): Promise<void> {
+        const command = await this.registerCommand(opt, permissions);
 
         this.commandResponces[command.id] = callback;
     }
@@ -123,13 +123,25 @@ export class DiscordBotClient extends EventEmitter {
      * コマンドを登録する
      * @param opt コマンド定義
      */
-    private async registerCommand(opt: ApplicationCommandWithoutId) {
-        return await this.client.api
+    private async registerCommand(opt: ApplicationCommandWithoutId, permissions: ApplicationCommandPermissions[]) {
+        const command = await this.client.api
             .applications(this.userId)
             .guilds(this.guildId)
             .commands.post({
                 data: opt as ApplicationCommand
             });
+
+        await this.client.api
+            .applications(this.userId)
+            .guilds(this.guildId)
+            .commands(command.id)
+            .permissions.put({
+                data: {
+                    permissions
+                }
+            });
+
+        return command;
     }
 
     /**
