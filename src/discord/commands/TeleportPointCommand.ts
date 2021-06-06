@@ -1,10 +1,10 @@
 import { injectable, inject } from 'tsyringe';
-import { EmbedFieldData, MessageEmbedOptions } from 'discord.js';
 import { readFileSync, writeFileSync } from 'fs';
 
 import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
 import { RconClient } from '@/rcon/RconClient';
+import { ApplicationCommandOptionType, ApplicationCommandPermissionType, InteractionCallbackType } from '@/discord/util/discord-api-enums';
 
 type TeleportPointType = {
     dimension: Dimension;
@@ -99,27 +99,28 @@ type TeleportPointInteraction<T extends SubCommand> = Interaction & {
     };
 };
 
-@injectable<CommandBase>()
-export class TeleportPointCommand extends CommandBase {
+@injectable<CommandBase<TeleportPointInteraction<SubCommand>>>()
+export class TeleportPointCommand extends CommandBase<TeleportPointInteraction<SubCommand>> {
     protected get command(): ApplicationCommandWithoutId {
         return {
             name: 'teleportpoint',
             description: '開発者用のテレポートポイントを設定します',
+            default_permission: false,
             options: [
                 {
                     name: 'list',
                     description: 'テレポートポイントのリストを表示します',
-                    type: 1
+                    type: ApplicationCommandOptionType.SUB_COMMAND
                 },
                 {
                     name: 'add',
                     description: 'テレポートポイントを追加します',
-                    type: 1,
+                    type: ApplicationCommandOptionType.SUB_COMMAND,
                     options: [
                         {
                             name: 'dimension',
                             description: '追加するテレポートポイントのディメンション',
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true,
                             choices: [
                                 {
@@ -139,25 +140,25 @@ export class TeleportPointCommand extends CommandBase {
                         {
                             name: 'name',
                             description: 'テレポートポイント名',
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true
                         },
                         {
                             name: 'x',
                             description: 'X座標',
-                            type: 4,
+                            type: ApplicationCommandOptionType.INTEGER,
                             required: true
                         },
                         {
                             name: 'y',
                             description: 'Y座標',
-                            type: 4,
+                            type: ApplicationCommandOptionType.INTEGER,
                             required: true
                         },
                         {
                             name: 'z',
                             description: 'Z座標',
-                            type: 4,
+                            type: ApplicationCommandOptionType.INTEGER,
                             required: true
                         }
                     ]
@@ -165,12 +166,12 @@ export class TeleportPointCommand extends CommandBase {
                 {
                     name: 'remove',
                     description: 'テレポートポイントを削除します',
-                    type: 1,
+                    type: ApplicationCommandOptionType.SUB_COMMAND,
                     options: [
                         {
                             name: 'dimension',
                             description: '追加するテレポートポイントのディメンション',
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true,
                             choices: [
                                 {
@@ -190,13 +191,23 @@ export class TeleportPointCommand extends CommandBase {
                         {
                             name: 'name',
                             description: 'テレポートポイント名',
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true
                         }
                     ]
                 }
             ]
         };
+    }
+
+    protected get permissions(): ApplicationCommandPermissions[] {
+        return [
+            {
+                id: this.config.Discord.allowCommandRole,
+                type: ApplicationCommandPermissionType.ROLE,
+                permission: true
+            }
+        ];
     }
 
     private readonly filePath = 'teleportpoints.json';
@@ -217,11 +228,9 @@ export class TeleportPointCommand extends CommandBase {
     }
 
     protected async callback(interaction: TeleportPointInteraction<SubCommand>): Promise<InteractionResponse> {
-        // 指定のチャンネル以外では実行しない
+        // 指定のチャンネル以外ではエラーを返す
         if (interaction.channel_id !== this.config.Discord.chatChannel) {
-            return {
-                type: 2
-            };
+            return this.invalidChannel(this.config.Discord.chatChannel);
         }
 
         const subCommand = interaction.data.options[0].name;
@@ -237,13 +246,11 @@ export class TeleportPointCommand extends CommandBase {
      * /teleportpoint list
      */
     private async subCommand_list(): Promise<InteractionResponse> {
-        let embed: MessageEmbedOptions;
-
         try {
             const tpPoints = this.readJsonFile();
 
             // 連想配列にしたのでちょっと処理が面倒なことになってる
-            const fields: EmbedFieldData[] = [];
+            const fields: EmbedField[] = [];
             for (const [dimName, dimPoints] of Object.entries(tpPoints)) {
                 const points: string[] = [];
                 for (const [pointName, { coordinate }] of Object.entries(dimPoints)) {
@@ -256,28 +263,35 @@ export class TeleportPointCommand extends CommandBase {
                 });
             }
 
-            embed = {
-                title: 'テレポートポイント一覧',
-                fields
+            return {
+                type: InteractionCallbackType.ChannelMessageWithSource,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: 'テレポートポイント一覧',
+                            fields
+                        }
+                    ]
+                }
             };
         }
         catch (err) {
             console.log('[TeleportPointCommand]:', err.message);
 
-            embed = {
-                title: 'コマンド実行中にエラーが発生しました'
+            return {
+                type: InteractionCallbackType.ChannelMessageWithSource,
+                data: {
+                    content: '',
+                    flags: 64,
+                    embeds: [
+                        {
+                            title: 'コマンド実行中にエラーが発生しました'
+                        }
+                    ]
+                }
             };
         }
-
-        return {
-            type: 4,
-            data: {
-                content: '',
-                embeds: [
-                    embed
-                ]
-            }
-        };
     }
 
     /**
@@ -290,8 +304,6 @@ export class TeleportPointCommand extends CommandBase {
         const x = interaction.data.options[0].options[2].value;
         const y = interaction.data.options[0].options[3].value;
         const z = interaction.data.options[0].options[4].value;
-
-        let embed: MessageEmbedOptions;
 
         try {
             if (!this.teleportPoints) {
@@ -318,33 +330,40 @@ export class TeleportPointCommand extends CommandBase {
             const tellraw = this.generageTellraw(this.teleportPoints);
             await this.updateMcfunction(tellraw);
 
-            embed = {
-                title: titleMessage,
-                fields: [
-                    {
-                        name: this.convDimName(dimension),
-                        value: `${name}: \`${x} ${y} ${z}\``
-                    }
-                ]
+            return {
+                type: InteractionCallbackType.ChannelMessageWithSource,
+                data: {
+                    content: '',
+                    embeds: [
+                        {
+                            title: titleMessage,
+                            fields: [
+                                {
+                                    name: this.convDimName(dimension),
+                                    value: `${name}: \`${x} ${y} ${z}\``
+                                }
+                            ]
+                        }
+                    ]
+                }
             };
         }
         catch (err) {
             console.log('[TeleportPointCommand]:', err.message);
 
-            embed = {
-                title: 'コマンド実行中にエラーが発生しました'
+            return {
+                type: InteractionCallbackType.ChannelMessageWithSource,
+                data: {
+                    content: '',
+                    flags: 64,
+                    embeds: [
+                        {
+                            title: 'コマンド実行中にエラーが発生しました'
+                        }
+                    ]
+                }
             };
         }
-
-        return {
-            type: 4,
-            data: {
-                content: '',
-                embeds: [
-                    embed
-                ]
-            }
-        };
     }
 
     /**
@@ -354,8 +373,6 @@ export class TeleportPointCommand extends CommandBase {
     private async subCommand_remove(interaction: TeleportPointInteraction<'remove'>): Promise<InteractionResponse> {
         const dimension = interaction.data.options[0].options[0].value;
         const name = interaction.data.options[0].options[1].value;
-
-        let embed: MessageEmbedOptions;
 
         try {
             if (!this.teleportPoints) {
@@ -371,39 +388,55 @@ export class TeleportPointCommand extends CommandBase {
                 const tellraw = this.generageTellraw(this.teleportPoints);
                 await this.updateMcfunction(tellraw);
 
-                embed = {
-                    title: 'テレポートポイントを削除しました',
-                    fields: [
-                        {
-                            name: this.convDimName(dimension),
-                            value: `${name}: \`${x} ${y} ${z}\``
-                        }
-                    ]
+                return {
+                    type: InteractionCallbackType.ChannelMessageWithSource,
+                    data: {
+                        content: '',
+                        embeds: [
+                            {
+                                title: 'テレポートポイントを削除しました',
+                                fields: [
+                                    {
+                                        name: this.convDimName(dimension),
+                                        value: `${name}: \`${x} ${y} ${z}\``
+                                    }
+                                ]
+                            }
+                        ]
+                    }
                 };
             }
             else {
-                embed = {
-                    title: '指定されたテレポートポイントは存在しません'
+                return {
+                    type: InteractionCallbackType.ChannelMessageWithSource,
+                    data: {
+                        content: '',
+                        flags: 64,
+                        embeds: [
+                            {
+                                title: '指定されたテレポートポイントは存在しません'
+                            }
+                        ]
+                    }
                 };
             }
         }
         catch (err) {
             console.log('[TeleportPointCommand]:', err.message);
 
-            embed = {
-                title: 'コマンド実行中にエラーが発生しました'
+            return {
+                type: InteractionCallbackType.ChannelMessageWithSource,
+                data: {
+                    content: '',
+                    flags: 64,
+                    embeds: [
+                        {
+                            title: 'コマンド実行中にエラーが発生しました'
+                        }
+                    ]
+                }
             };
         }
-
-        return {
-            type: 4,
-            data: {
-                content: '',
-                embeds: [
-                    embed
-                ]
-            }
-        };
     }
 
     /**

@@ -7,6 +7,7 @@ import path from 'path';
 import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
 import { DiscordBotClient } from '@/discord/DiscordBotClient';
+import { ApplicationCommandOptionType, ApplicationCommandPermissionType, InteractionCallbackType } from '@/discord/util/discord-api-enums';
 
 type SubCommand =
     | 'list'
@@ -32,33 +33,44 @@ type SchematicInteraction<T extends SubCommand> = Interaction & {
     };
 };
 
-@injectable<CommandBase>()
-export class SchematicCommand extends CommandBase {
+@injectable<CommandBase<SchematicInteraction<SubCommand>>>()
+export class SchematicCommand extends CommandBase<SchematicInteraction<SubCommand>> {
     protected get command(): ApplicationCommandWithoutId {
         return {
             name: 'schematic',
             description: '開発サーバーのSchematicを管理します',
+            default_permission: false,
             options: [
                 {
                     name: 'list',
                     description: 'Schematicのリスト',
-                    type: 1
+                    type: ApplicationCommandOptionType.SUB_COMMAND
                 },
                 {
                     name: 'delete',
                     description: 'Schematicファイルを削除します',
-                    type: 1,
+                    type: ApplicationCommandOptionType.SUB_COMMAND,
                     options: [
                         {
                             name: 'file_name',
                             description: '削除するSchematicファイル名',
-                            type: 3,
+                            type: ApplicationCommandOptionType.STRING,
                             required: true
                         }
                     ]
                 }
             ]
         };
+    }
+
+    protected get permissions(): ApplicationCommandPermissions[] {
+        return [
+            {
+                id: this.config.Discord.allowCommandRole,
+                type: ApplicationCommandPermissionType.ROLE,
+                permission: true
+            }
+        ];
     }
 
     public constructor(
@@ -71,11 +83,9 @@ export class SchematicCommand extends CommandBase {
     }
 
     protected async callback(interaction: SchematicInteraction<SubCommand>): Promise<InteractionResponse> {
-        // 指定のチャンネル以外では実行しない
+        // 指定のチャンネル以外ではエラーを返す
         if (interaction.channel_id !== this.config.Discord.chatChannel) {
-            return {
-                type: 2
-            };
+            return this.invalidChannel(this.config.Discord.chatChannel);
         }
 
         const subCommand = interaction.data.options[0].name;
@@ -98,7 +108,7 @@ export class SchematicCommand extends CommandBase {
                 .filter(x => /^.*\.(?:schematic|schem)$/.test(x));
 
             return {
-                type: 4,
+                type: InteractionCallbackType.ChannelMessageWithSource,
                 data: {
                     content: '',
                     embeds: [
@@ -114,9 +124,10 @@ export class SchematicCommand extends CommandBase {
             console.log('[SchematicCommand]:', err.message);
 
             return {
-                type: 4,
+                type: InteractionCallbackType.ChannelMessageWithSource,
                 data: {
                     content: '',
+                    flags: 64,
                     embeds: [
                         {
                             title: 'コマンド実行中にエラーが発生しました'
@@ -139,7 +150,7 @@ export class SchematicCommand extends CommandBase {
             unlinkSync(filePath);
 
             return {
-                type: 4,
+                type: InteractionCallbackType.ChannelMessageWithSource,
                 data: {
                     content: '',
                     embeds: [
@@ -155,9 +166,10 @@ export class SchematicCommand extends CommandBase {
             console.log('[SchematicCommand]:', err.message);
 
             return {
-                type: 4,
+                type: InteractionCallbackType.ChannelMessageWithSource,
                 data: {
                     content: '',
+                    flags: 64,
                     embeds: [
                         {
                             title: 'コマンド実行中にエラーが発生しました'

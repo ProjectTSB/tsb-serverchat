@@ -4,14 +4,26 @@ import { name, version, repository } from '../../../package.json';
 
 import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
+import { ApplicationCommandPermissionType, InteractionCallbackType } from '@/discord/util/discord-api-enums';
 
 @injectable<CommandBase>()
 export class HelpCommand extends CommandBase {
     protected get command(): ApplicationCommandWithoutId {
         return {
             name: 'help',
-            description: 'Botのヘルプを出力します'
+            description: 'Botのヘルプを出力します',
+            default_permission: false
         };
+    }
+
+    protected get permissions(): ApplicationCommandPermissions[] {
+        return [
+            {
+                id: this.config.Discord.allowCommandRole,
+                type: ApplicationCommandPermissionType.ROLE,
+                permission: true
+            }
+        ];
     }
 
     public constructor(
@@ -21,11 +33,9 @@ export class HelpCommand extends CommandBase {
     }
 
     protected async callback(interaction: Required<Interaction>): Promise<InteractionResponse> {
-        // 指定のチャンネル以外では実行しない
+        // 指定のチャンネル以外ではエラーを返す
         if (interaction.channel_id !== this.config.Discord.chatChannel) {
-            return {
-                type: 2
-            };
+            return this.invalidChannel(this.config.Discord.chatChannel);
         }
 
         const futures = [
@@ -40,9 +50,10 @@ export class HelpCommand extends CommandBase {
         });
 
         return {
-            type: 4,
+            type: InteractionCallbackType.ChannelMessageWithSource,
             data: {
                 content: '',
+                flags: 64,
                 embeds: [
                     {
                         author: {
