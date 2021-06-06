@@ -2,6 +2,7 @@
 
 [![License_Badge][]][License]
 [![CI_Badge][]][CI]
+[![SemanticRelease_Badge][]][semantic-release]
 ![Version_Badge][]
 
 TSB開発サーバーとTSB Discordのチャットを連携するプログラム
@@ -23,6 +24,8 @@ TSB開発サーバーとTSB Discordのチャットを連携するプログラム
 
 ## Discordコマンド
 
+全てのコマンドは指定したロールのユーザーのみ実行可能です
+
 ### `/help`
 
 Botのヘルプを出力します
@@ -31,11 +34,13 @@ Botのヘルプを出力します
 
 - `command` **string** Minecraftコマンド
 
-TSB開発サーバーにコマンドを送信します
+TSB開発サーバーにコマンドを送信します\
+指定したチャンネルでのみ実行可能です
 
 ### `/schematic <list|delete>`
 
-Schematicファイルを管理します
+Schematicファイルを管理します\
+指定したチャンネルでのみ実行可能です
 
 #### `list`
 
@@ -49,7 +54,8 @@ Schematicファイルを削除します
 
 ### `/teleportpoint <list|add|remove>`
 
-テレポートポイントを設定します
+テレポートポイントを設定します\
+指定したチャンネルでのみ実行可能です
 
 #### `list`
 
@@ -80,6 +86,7 @@ Schematicファイルを削除します
 
 [License_Badge]: https://img.shields.io/github/license/TheSkyBlock/tsb-serverchat
 [CI_Badge]: https://img.shields.io/github/workflow/status/TheSkyBlock/tsb-serverchat/CI?logo=github&label=CI
+[SemanticRelease_Badge]: https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg
 [Version_Badge]: https://img.shields.io/github/package-json/v/TheSkyBlock/tsb-serverchat
 
 [License]:./LICENSE
@@ -88,3 +95,4 @@ Schematicファイルを削除します
 [Visual Studio Code]:https://code.visualstudio.com/
 [Node.js]:https://nodejs.org/ja/
 [Yarn]:https://classic.yarnpkg.com/ja/
+[semantic-release]: https://github.com/semantic-release/semantic-release
