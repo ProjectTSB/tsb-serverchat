@@ -41,12 +41,12 @@ const REGEX_PLAYER_CHAT = /^<([^>]*)> (.*)$/;
 /**
  * プレイヤーログインの正規表現
  */
-const REGEX_PLAYER_LOGIN = /^([^ ]*) joined the game$/;
+const REGEX_PLAYER_LOGIN = /^(.*) joined the game$/;
 
 /**
  * プレイヤーログアウトの正規表現
  */
-const REGEX_PLAYER_LOGOUT = /^([^ ]*) left the game$/;
+const REGEX_PLAYER_LOGOUT = /^(.*) left the game$/;
 
 /**
  * サーバー起動の正規表現
