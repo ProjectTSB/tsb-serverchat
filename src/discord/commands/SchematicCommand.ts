@@ -188,7 +188,7 @@ export class SchematicCommand extends CommandBase<SchematicInteraction<SubComman
      */
     private async discordBotClient_onSchematic(channel: TextChannel, fileName: string, url: string) {
         https.get(url, res => {
-            const schemPath = path.join(this.config.Minecraft.serverPath, 'schematics', fileName);
+            const schemPath = path.join(this.config.Minecraft.serverPath, 'plugins/FastAsyncWorldEdit/schematics', fileName);
             const stream = createWriteStream(schemPath);
 
             stream.on('finish', () => {

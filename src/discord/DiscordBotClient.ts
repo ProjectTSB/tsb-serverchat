@@ -1,6 +1,9 @@
 import { Client, PresenceStatusData, TextChannel, Message } from 'discord.js';
 import { singleton, inject } from 'tsyringe';
 import { EventEmitter } from 'events';
+import { createWriteStream } from 'fs';
+import path from 'path';
+import https from 'https';
 
 import { Config } from '@/Config';
 import { CommandBase } from '@/discord/util/CommandBase';
@@ -36,6 +39,7 @@ export class DiscordBotClient extends EventEmitter {
 
         client.on('ready', this.client_onReady.bind(this));
         client.on('message', this.client_onMessage.bind(this));
+        this.on('schematic', this.discordBotClient_onSchematic.bind(this));
     }
 
     /**
@@ -231,6 +235,30 @@ export class DiscordBotClient extends EventEmitter {
                         data: await this.commandResponces[id](interaction)
                     });
             }
+        });
+    }
+
+    /**
+     * Schematicファイル送信時
+     * @param channel ファイルが貼られたチャンネル
+     * @param fileName ファイル名
+     * @param url ファイルのリンク
+     */
+    private async discordBotClient_onSchematic(channel: TextChannel, fileName: string, url: string) {
+        https.get(url, res => {
+            const schemPath = path.join(this.config.Minecraft.serverPath, 'plugins/FastAsyncWorldEdit/schematics', fileName);
+            const stream = createWriteStream(schemPath);
+
+            stream.on('finish', () => {
+                channel.send({
+                    embed: {
+                        title: `${fileName} をアップロードしました`,
+                        description: `//schematic load ${fileName}`
+                    }
+                });
+            });
+
+            res.pipe(stream);
         });
     }
 }
