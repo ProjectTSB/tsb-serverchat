@@ -131,6 +131,7 @@ export class DiscordBotClient extends EventEmitter {
                 data: opt as ApplicationCommand
             });
 
+        // NOTE: API側の仕様が変わったのか、使えなくなってた
         await this.client.api
             .applications(this.userId)
             .guilds(this.guildId)
@@ -177,12 +178,13 @@ export class DiscordBotClient extends EventEmitter {
         const textChannel = await this.GetTextChannel(this.config.Discord.chatChannel);
         this.guildId = textChannel.guild.id;
 
+        // TODO: いつか直す！！！！！！！！！！
         // コマンドを一旦全削除してから登録
-        console.log('[Discord]: コマンドを初期化しています');
-        await this.deleteAllCommands();
-        await CommandBase.RegisterAllCommands();
+        // console.log('[Discord]: コマンドを初期化しています');
+        // await this.deleteAllCommands();
+        // await CommandBase.RegisterAllCommands();
 
-        this.client.ws.on('INTERACTION_CREATE', this.clientWs_onInteractionCreate.bind(this));
+        // this.client.ws.on('INTERACTION_CREATE', this.clientWs_onInteractionCreate.bind(this));
 
         console.log('[Discord]: Botが起動しました');
 
